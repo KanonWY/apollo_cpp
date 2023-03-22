@@ -1,0 +1,1 @@
+add_library(apollo_cpp SHARED apollo_basic.cpp)
