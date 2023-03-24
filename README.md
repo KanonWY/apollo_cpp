@@ -4,7 +4,8 @@
 
 [cpprest example](http://www.atakansarioglu.com/easy-quick-start-cplusplus-rest-client-example-cpprest-tutorial/)
 
-使用该库之后就不需要
+使用该库之后就不需要额外引入json解析库以及http相关的库，可以简单满足；apollo客户端的相关http请求。支持阻塞与非阻塞调用以及超时等待，满足配置
+自动更新监测所需的相关API。
 
 ## 2. apollo客户端获取配置与更新推送
 
@@ -155,7 +156,7 @@ namespace:[
 
 那么配置如下：
 
-```json
+```bash
 appid: app_car_b_Q,
 namespace: [
     PROCESS_1
@@ -179,4 +180,10 @@ namespace: [
     PROCESS_3
     ......
 ]
+```
+### 基本结构体
+```bash
+apoll_base用于最基础的一次连接需求的实现，里面应该不含有任何成员变量。
+apollo_client继承于apollo_base可以使用底层接口封装不同命名空间与配置map的需求。
+最好支持配置更新回调。
 ```
