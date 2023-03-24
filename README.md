@@ -1,19 +1,14 @@
-## apollo_cpp概述
+## 1. apollo_cpp概述
 
 一个简单参数服务器apollo的cpp客户端，支持C++11。http-client库采用`cpprestsdk::cpprest`.
 
 [cpprest example](http://www.atakansarioglu.com/easy-quick-start-cplusplus-rest-client-example-cpprest-tutorial/)
 
-## apollo
+使用该库之后就不需要
 
-### 1.获取配置
-```bash
-GET
-http://localhost:8080/configfiles/json/codereview/default/codereviwNS
+## 2. apollo客户端获取配置与更新推送
 
-```
-
-## 配置更新推送
+### 2.1 配置更新推送
 
 1、 基本请求与返回
 
@@ -24,19 +19,7 @@ URL: {config_server_url}/notifications/v2?appId={appId}&cluster={clusterName}&no
 
 Method: GET
 ```
-
-返回JSON
-
-```json
-[
-  {
-    "namespaceName": "application",
-    "notificationId": 101
-  }
-]
-```
-
-
+2、基本流程图
 
 ```mermaid
 sequenceDiagram
@@ -44,7 +27,7 @@ sequenceDiagram
 Apollo远程服务 ->> 客户端: 返回JSON数据（变化的namespace和最新的notificationId）
 ```
 
-2、请求流程
+3、配置更新图
 
 在客户端存在一个持续请求的任务，该任务主要是为了定期从配置服务器中获取最新的配置信息。
 
@@ -58,9 +41,40 @@ Apollo远端服务 -->> 客户端: 如果60秒内失效或者立即实效，则�
 客户端 -->> 客户端: 客户端判断返回status, 304:配置没有变化，回到起始继续操作
 ```
 
-## API设计
+4、返回JSON数据说明：
 
-#### 接入需求
+- 针对200OK，返回的JSON数据实例为：
+
+```json
+[
+    {
+        "namespaceName": "p1_pram_set",
+        "notificationId": 16,
+        "messages": {
+            "details": {
+                "cp1+default+p1_pram_set": 16
+            }
+        }
+    },
+    {
+        "namespaceName": "p2_pram_set",
+        "notificationId": 17,
+        "messages": {
+            "details": {
+                "cp1+default+p2_pram_set": 17
+            }
+        }
+    }
+]
+```
+
+- 对于304，服务器会与客户端保持连接60s，然后返回304
+
+- 如果其他错误，说明是请求的url格式有问题，注意传递参数需要使用url编码。[在线URL转换工具](https://tool.chinaz.com/tools/urlencode.aspx)
+
+## 3. API设计
+
+#### 3.1 接入需求
 
 如何让c++的代码接入Apoll参数服务器 ，验证支持的参数类型：基本类型、嵌套、vector、list之类的。
 
@@ -69,7 +83,8 @@ answer:
 目前apollo的版本是2.1.0，暂时只支持string类型的参数值，如果需要多个类型的需要自己解析字符串，然后拼接规则。
 apollo已经有计划接入字段类型，但是还没有正式引入。具体[dis描述](https://github.com/apolloconfig/apollo/discussions/4716)。
 
-#### 场景分析
+
+#### 3.2 场景分析
 
 一个自动驾驶的车辆，里面有很多工控机，每个工控机下有很多程序，每个程序都有它自己要关心的参数，如何去设计比较好。
 1：以一个车为单位，如何管理这个车内所有工控机内程序的参数。
@@ -89,6 +104,10 @@ apollo已经有计划接入字段类型，但是还没有正式引入。具体[d
         |        |
     	|        |
     param set1  param set2
+      /|\
+       |
+    |||||||
+    apollo
 - cp - 工控机
 - p1 - 进程1
 - param set1- 参数集
@@ -161,8 +180,3 @@ namespace: [
     ......
 ]
 ```
-
-
-
-
-

@@ -108,8 +108,8 @@ std::string getKeyValueBuffer(const std::string& key,
 //}
 //
 //
-//const char* NO_BUFFER_URL = "%s/configs/%s/%s/%s";
-//const char* CONFIGURATIONS_NAME = "configurations";
+// const char* NO_BUFFER_URL = "%s/configs/%s/%s/%s";
+// const char* CONFIGURATIONS_NAME = "configurations";
 
 //基础接口
 std::string getKeyValueNoBuffer(
@@ -215,10 +215,7 @@ void RemoteConfigLongPollService(const NotifyMix& notify)
     Properties oldProperties;
 }
 
-void
-
-    int
-    testgetKeyValueBuffer()
+void testgetKeyValueBuffer()
 {
     auto value = getKeyValueBuffer("testmodify", "http://localhost:8080",
                                    "codereview", "default", "codereviwNS");
@@ -226,7 +223,6 @@ void
     {
         std::cout << "value = " << value.c_str() << std::endl;
     }
-    return 0;
 }
 
 int testgetKeyValueNoBuffer()
