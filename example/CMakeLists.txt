@@ -1,0 +1,2 @@
+add_executable(sample_single_ns sample_single_ns.cpp)
+target_link_libraries(sample_single_ns PUBLIC apollo_cpp)
