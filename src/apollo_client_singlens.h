@@ -11,7 +11,7 @@ namespace apollo_client
 {
 
 // only one namespace for a client
-class apollo_sgns_client: public apollo_base
+class apollo_sgns_client : public apollo_base
 {
 public:
     using Callback = std::function<void()>;
@@ -33,13 +33,21 @@ public:
         const Callback &c = []() {},
         bool triggle_call_back = false);
 
+//    void init(
+//        const std::string &address,
+//        const std::string &appid,
+//        const std::string &clusterName,
+//        const std::string &namespaceName,
+//        Callback &&cb = []() {},
+//        bool triggle_call_back = false);
+
     void setCallback(const Callback &cb);
 
     void setCallback(Callback &&cb);
 
-    void turnOnCallback();
+    void turnonCallback();
 
-    void turnOffCallback();
+    void turnoffCallback();
 
     std::string getConfigNoBufferByKey(const std::string &key);
 

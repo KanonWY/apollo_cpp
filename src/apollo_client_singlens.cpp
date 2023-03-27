@@ -19,10 +19,32 @@ void apollo_sgns_client::init(
     std::get<0>(nsNid_) = namespaceName;
     start_ = true;
     b_call_back = triggle_call_back;
+    call_back_ = cb;
     updateConfigMap();
     dumpConfig();
     submitNotificationsAsync();
 }
+
+//void apollo_sgns_client::init(const std::string &address,
+//                              const std::string &appid,
+//                              const std::string &clusterName,
+//                              const std::string &namespaceName,
+//                              apollo_sgns_client::Callback &&cb,
+//                              bool triggle_call_back)
+//{
+//    env_.appid_name_ = appid;
+//    env_.address_ = address;
+//    env_.namespace_name_ = namespaceName;
+//    env_.cluster_name_ = clusterName;
+//    std::get<0>(nsNid_) = namespaceName;
+//    start_ = true;
+//    b_call_back = triggle_call_back;
+//    call_back_ = std::move(cb);
+//    updateConfigMap();
+//    dumpConfig();
+//    submitNotificationsAsync();
+//}
+
 std::string apollo_sgns_client::getConfigNoBufferByKey(const std::string &key)
 {
     if (!start_) {
@@ -60,12 +82,12 @@ web::http::status_code apollo_sgns_client::checkNotify()
 {
     char stackBuf[200] = {0};
     sprintf(stackBuf, NOTIFICATIONS_URL, env_.address_.c_str());
-    std::string Baseurl(stackBuf);
+    std::string base_url(stackBuf);
     try {
         //  config 61s time out because of the check success will keep 60s.
         web::http::client::http_client_config clientConfig;
         clientConfig.set_timeout(std::chrono::seconds(61));
-        auto requestClient = web::http::client::http_client(Baseurl, clientConfig);
+        auto requestClient = web::http::client::http_client(base_url, clientConfig);
 
         // contact request param from name_nid_map_
         web::json::value NotifyJsonValue;
@@ -82,7 +104,9 @@ web::http::status_code apollo_sgns_client::checkNotify()
         web::http::uri_builder builder;
         builder.append_query(U(QUERY_PARAM_NOTIFY_STRING_NAME), nsNfJsonValue.serialize().c_str());
         builder.append_query(U(QUERY_PARAM_APPID_STRING_NAME), env_.appid_name_.c_str());
-        builder.append_query(U(QUERY_PARAM_CLUSTER_STRING_NAME), env_.namespace_name_.c_str());
+        builder.append_query(U(QUERY_PARAM_CLUSTER_STRING_NAME), env_.cluster_name_.c_str());
+
+        SPDLOG_INFO("check url = {} {}",base_url, builder.to_string().c_str());
 
         // send request(it's a block way) and check return status
         auto response = requestClient.request(web::http::methods::GET, builder.to_string())
@@ -144,11 +168,11 @@ void apollo_sgns_client::setCallback(apollo_sgns_client::Callback &&cb)
 {
     call_back_ = std::move(cb);
 }
-void apollo_sgns_client::turnOnCallback()
+void apollo_sgns_client::turnonCallback()
 {
     b_call_back = true;
 }
-void apollo_sgns_client::turnOffCallback()
+void apollo_sgns_client::turnoffCallback()
 {
     b_call_back = false;
 }
