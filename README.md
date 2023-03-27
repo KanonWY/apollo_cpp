@@ -20,6 +20,46 @@ cmake -S . -B build -G "Ninja"
 cmake --build build --target all
 ```
 
+- 测试环境
+
+环境为Ubuntu20.04
+
+1、安装docker以及docker-compose:
+
+```bash
+# install docker
+curl https://get.docker.com | sh
+sudo systemctl start docker && sudo systemctl enable docker
+# Manage Docker as a non-root user
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+# Configure Docker to start on boot with systemd
+sudo systemctl enable docker.service
+sudo systemctl enable containerd.service
+
+# install docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+2、执行docker-compose
+
+```bash
+cd docker_env
+docker-compose up -d
+# 查看是否启动成功
+docker logs -f apollo-quick-start
+# Config service started. You may visit http://localhost:8080 for service status now!
+# Portal started. You can visit http://localhost:8070 now!
+```
+
+3、使用数据卷容器迁移数据
+
+TODO
+
+
+
 ### 2. apollo客户端获取配置与更新推送基本流程
 
 #### 2.1 配置更新推送

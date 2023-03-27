@@ -12,7 +12,7 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std
                                                                        const std::string &clusterName)
 {
     if ((config_server_url.size() + appidName.size() + namespaceName.size() + clusterName.size()) > 200) {
-        std::cout << "url large than 200";
+        SPDLOG_ERROR("url large than 200");
         return {};
     }
     // allocator a return value
@@ -43,7 +43,7 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std
             return resMap;
         }
     } catch (std::exception &e) {
-        std::cout << "Exception: " << e.what() << std::endl;
+        SPDLOG_ERROR("Exception: {}", e.what());
         return resMap;
     }
     return resMap;
@@ -52,7 +52,7 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std
 bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, const std::string &appidName, const std::string &namespaceName, const std::string &clusterName, std::map<std::string, std::string> &output)
 {
     if ((config_server_url.size() + appidName.size() + namespaceName.size() + clusterName.size()) > 200) {
-        std::cout << "url large than 200" << std::endl;
+        SPDLOG_ERROR("url larger than 200!");
         return false;
     }
     // contact url
@@ -83,7 +83,7 @@ bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, c
             return true;
         }
     } catch (std::exception &e) {
-        std::cout << "Exception: " << e.what() << std::endl;
+        SPDLOG_ERROR("Exception: {}", e.what());
         return false;
     }
     return false;
@@ -92,7 +92,7 @@ bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, c
 std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_server_url, const std::string &appidName, const std::string &namespaceName, const std::string &clusterName, const std::string &key)
 {
     if ((config_server_url.size() + appidName.size() + namespaceName.size() + clusterName.size()) > 200) {
-        std::cout << "url large than 200";
+        SPDLOG_ERROR("url larger than 200!");
         return {};
     }
     // contact url
@@ -122,7 +122,7 @@ std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_s
             }
         }
     } catch (std::exception &e) {
-        std::cout << "Exception: " << e.what() << std::endl;
+        SPDLOG_ERROR("Exception: {}", e.what());
         return {};
     }
     return {};
