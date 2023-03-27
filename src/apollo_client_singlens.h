@@ -53,13 +53,15 @@ public:
 
     std::string getConfigLocalBufferByKey(const std::string &key);
 
+
+    std::map<std::string, std::string> getConfig();
+
     ~apollo_sgns_client() override
     {
         start_ = false;
         if (loop_thread_.joinable()) {
             loop_thread_.join();
         }
-        std::cout << "exit======================>" << std::endl;
     }
 
     void dumpConfig();

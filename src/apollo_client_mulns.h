@@ -46,6 +46,7 @@ private:
     web::http::status_code checkNotify();
 
 
+
 public:
     //call back setting
     void setCallback(const Callback& cb);
@@ -55,6 +56,9 @@ public:
     void turnonCallback();
     
     void turnoffCallback();
+
+    std::map<std::string, std::string> getConfigureByNs(const std::string& ns);
+
 
 private:
     env_base env_;

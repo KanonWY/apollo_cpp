@@ -1,21 +1,30 @@
-## 1. apollo_cpp概述
+### 1. apollo_cpp概述
 
-一个简单参数服务器apollo的cpp客户端，支持C++11。http-client库采用`cpprestsdk::cpprest`.
+一个简单参数服务器apollo的cpp客户端，支持C++11。http-client库采用`cpprestsdk::cpprest`(使用该库之后就不需要额外引入json解析库以及http相关的库，可以简单满足；apollo客户端的相关http请求。支持阻塞与非阻塞调用以及超时等待，满足配置自动更新监测所需的相关API)，日志库使用了`spdlog`。
 
-[cpprest example](http://www.atakansarioglu.com/easy-quick-start-cplusplus-rest-client-example-cpprest-tutorial/)
-
-使用该库之后就不需要额外引入json解析库以及http相关的库，可以简单满足；apollo客户端的相关http请求。支持阻塞与非阻塞调用以及超时等待，满足配置
-自动更新监测所需的相关API。
+- 安装依赖
 
 ```bash
-# install cpprest
+# install cpprest and spdlog
 sudo apt-get install libcpprest-dev
+sudo apt-get install libspdlog-dev
 ```
 
+- 编译（默认编译sample)
 
-## 2. apollo客户端获取配置与更新推送
+开启了严格校验模式，会出现一些警告。
 
-### 2.1 配置更新推送
+```bash
+cd apollo_cpp
+cmake -S . -B build -G "Ninja"
+cmake --build build --target all
+```
+
+### 2. apollo客户端获取配置与更新推送基本流程
+
+#### 2.1 配置更新推送
+
+配置与更新推送的本质是：发送http请求，解析返回的JSON数据，进行更新。
 
 1、 基本请求与返回
 
@@ -23,7 +32,6 @@ sudo apt-get install libcpprest-dev
 
 ```bash
 URL: {config_server_url}/notifications/v2?appId={appId}&cluster={clusterName}&notifications={notifications}
-
 Method: GET
 ```
 2、基本流程图
@@ -79,7 +87,7 @@ Apollo远端服务 -->> 客户端: 如果60秒内失效或者立即实效，则�
 
 - 如果其他错误，说明是请求的url格式有问题，注意传递参数需要使用url编码。[在线URL转换工具](https://tool.chinaz.com/tools/urlencode.aspx)
 
-## 3. API设计
+### 3. API设计
 
 #### 3.1 接入需求
 
@@ -187,9 +195,86 @@ namespace: [
     ......
 ]
 ```
-### 基本结构体
-```bash
-apoll_base用于最基础的一次连接需求的实现，里面应该不含有任何成员变量。
-apollo_client继承于apollo_base可以使用底层接口封装不同命名空间与配置map的需求。
-最好支持配置更新回调。
+#### 3.3 可用模式
+
+详细示例：sample_public_ns.cpp
+
+`apollo_mulns_client`结构中包含环境信息（每一个client与一个appid对应，每一个appid下有多个命名空间，每一个命名空间本质是一个配置文件）。
+
+假设我们有两个appid：1、cp1；2、pubconfig。
+
+其中，`cp1`表示某一台车的所有的应用配置文件的集合所对应的文件(每一个命名空间对应一个配置文件）：`cp1`有N个私有的命名空间，分别为`p1_pram_set`，`p2_pram_set`，.......。`p1_pram_set`的键值对被进程A(`process1_A`)使用，`p2_pram_set`的键值对被进程B(`processB`)使用。
+
+此外还有一个公共的应用`pubconfig`，他的所有的命名空间都是`public`的，意味着所有的应用都可以访问该公共应用下的所有命名空间。比如：进程A在使用`cp1:p1_pram_set`配置的同时，还使用了`pubconfig:type1_public_config`的公共配置文件。图示如下：
+
+```cpp
+/**         
+ *          explain:         
+ * 
+ *          1、cp1 app have two private namespace: p1_pram_set  p2_pram_set
+ *          
+ *          2、pubconfig app have multi public namespace(use pubconfig as the public config appid)
+ * */
+
+/**
+ *                --- -- -- - cp1(APP) -- -- --  --
+ *                           /                    \  
+ *               /            \                   \
+ *              /             \                    \
+ *             /              \                     \
+ *            /                \                      \
+ *           /                  \                       \
+ * 
+ *    p1_pram_set(ns1)      p2_pram_set(ns2)             ns3...
+ *          |                       |
+ *          | have                  | have
+ *         \|/                     \|/
+ *     [key1:value1]           [key1:value1]     
+ *     [key2:value2]           [key2:value2]
+ *      ......                     ......
+ *          |                         |
+ *          |                         |
+ *          |                         |
+ *          |used by                  | used by
+ *          |                         |
+ *          |                         |
+ *         \|/                       \|/
+ *      process_A               process_B
+ *          __                     __ 
+ *         /\                       /\
+ *           \                     /
+ *            \                   /
+ *             \                 /
+ *              \               /
+ *               \  can be use /
+ *                \           /
+ *                 \         /                          |
+ *                  \       /                           |  
+ *                   \     /                            | can be use
+ *                    \   /                             |
+ *                     \ /                              |
+ * 
+ *                  [key1: value1]                [key1: value1]
+ *                  [key2: value2]                [key2: value2]
+ *                  ......                          ......
+ *                     /|\                           /|\
+ *                      |  have                       | have
+ *                      |                            |
+ *                      |                           |
+ * 
+ *          type1_public_config(ns1)      type2_public_config(ns2)     
+ *                   __                    __
+ *                  |\                      /\
+ *                    \                    /
+ *                     \                  /                 
+ *                      \                / 
+ *          
+ *                        pubconfig(public APP)
+ * 
+ * 
+ * */
 ```
+
+### ref
+
+[cpprest example](http://www.atakansarioglu.com/easy-quick-start-cplusplus-rest-client-example-cpprest-tutorial/)

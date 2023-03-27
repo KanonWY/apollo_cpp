@@ -106,7 +106,7 @@ web::http::status_code apollo_sgns_client::checkNotify()
         builder.append_query(U(QUERY_PARAM_APPID_STRING_NAME), env_.appid_name_.c_str());
         builder.append_query(U(QUERY_PARAM_CLUSTER_STRING_NAME), env_.cluster_name_.c_str());
 
-        SPDLOG_INFO("check url = {} {}",base_url, builder.to_string().c_str());
+        SPDLOG_INFO("check url = {} {}", base_url, builder.to_string().c_str());
 
         // send request(it's a block way) and check return status
         auto response = requestClient.request(web::http::methods::GET, builder.to_string())
@@ -184,4 +184,8 @@ void apollo_sgns_client::dumpConfig()
     }
 }
 
+std::map<std::string, std::string> apollo_sgns_client::getConfig()
+{
+    return config_map_;
+}
 } // namespace apollo_client

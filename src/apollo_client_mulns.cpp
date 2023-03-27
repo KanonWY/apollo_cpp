@@ -46,6 +46,7 @@ void apollo_mulns_client::updateConfigMap()
 {
     {
         std::lock_guard<std::mutex> lock(ns_config_map_mt_);
+        ns_config_map_.clear();
         for (const auto &ns : env_.ns_map_) {
             ns_config_map_.insert({ns, getConfigNoBufferInner(env_.address_, env_.appid_name_, ns, env_.cluster_name_)});
         }
@@ -97,6 +98,7 @@ web::http::status_code apollo_mulns_client::checkNotify()
             //update notifyId
             auto json_data = response.extract_json().get();
             auto json_array = json_data.as_array();
+            SPDLOG_INFO("json_data = {}", json_data.serialize().c_str() );
             // json_array = [{"messages":{"details":{"cp1+default+p1_pram_set":22}},"namespaceName":"p1_pram_set","notificationId":22},
             // {"messages":{"details":{"cp1+default+p2_pram_set":17}},"namespaceName":"p2_pram_set","notificationId":17}]
             //fill info to local set.
@@ -160,6 +162,11 @@ void apollo_mulns_client::turnonCallback()
 void apollo_mulns_client::turnoffCallback()
 {
     b_call_back = false;
+}
+
+std::map<std::string, std::string> apollo_mulns_client::getConfigureByNs(const std::string& ns)
+{
+    return ns_config_map_[ns];
 }
 
 } // namespace apollo_client

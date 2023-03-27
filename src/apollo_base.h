@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 
 
 namespace apollo_client
@@ -29,6 +30,42 @@ public:
 
     virtual ~apollo_base() = default;
 };
+
+//This is can change the server config
+
+class apollo_openapi_base
+{
+public:
+    std::set<std::map<std::string, std::string>> getAllAppInfo(const std::string& appIds);
+
+    // cluster about
+
+    // 1. get cluster info
+
+    // 2. create a new cluster
+
+
+    // ns about
+
+
+    // config about
+
+    // 1. get config
+
+
+
+    // 2. add config
+
+    // 3. modify config
+
+    // 4. delete config
+
+    // 5. pub config
+
+};
+
+
+
 }
 
 #endif
