@@ -7,6 +7,12 @@
 使用该库之后就不需要额外引入json解析库以及http相关的库，可以简单满足；apollo客户端的相关http请求。支持阻塞与非阻塞调用以及超时等待，满足配置
 自动更新监测所需的相关API。
 
+```bash
+# install cpprest
+sudo apt-get install libcpprest-dev
+```
+
+
 ## 2. apollo客户端获取配置与更新推送
 
 ### 2.1 配置更新推送
