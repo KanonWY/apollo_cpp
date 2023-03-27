@@ -1,11 +1,15 @@
 #include <cpprest/http_client.h>
 #include "const_url_value.h"
 #include "apollo_base.h"
+#include <spdlog/spdlog.h>
+
+namespace apollo_client
+{
 
 std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std::string &config_server_url,
-                                                                  const std::string &appidName,
-                                                                  const std::string &namespaceName,
-                                                                  const std::string &clusterName)
+                                                                       const std::string &appidName,
+                                                                       const std::string &namespaceName,
+                                                                       const std::string &clusterName)
 {
     if ((config_server_url.size() + appidName.size() + namespaceName.size() + clusterName.size()) > 200) {
         std::cout << "url large than 200";
@@ -51,9 +55,8 @@ bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, c
         std::cout << "url large than 200" << std::endl;
         return false;
     }
-    // allocator a return value
-    std::map<std::string, std::string> resMap;
     // contact url
+    output.clear();
     std::string baseUrl;
     baseUrl.reserve(200);
     {
@@ -68,13 +71,14 @@ bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, c
         auto requestClient = web::http::client::http_client(baseUrl);
         auto response = requestClient.request(web::http::methods::GET).get();
         if (response.status_code() == web::http::status_codes::OK) {
+            SPDLOG_INFO("requestClient => {}", baseUrl.c_str());
             // return a json object
             auto jsonData = response.extract_json().get();
             //get configurations from json object
             auto configJsonObj = jsonData[U(CONFIGURATIONS_NAME)].as_object();
             // fill to map
             for (auto &configItem : configJsonObj) {
-                resMap.insert({configItem.first, configItem.second.as_string()});
+                output.insert({configItem.first, configItem.second.as_string()});
             }
             return true;
         }
@@ -84,8 +88,6 @@ bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, c
     }
     return false;
 }
-
-
 
 std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_server_url, const std::string &appidName, const std::string &namespaceName, const std::string &clusterName, const std::string &key)
 {
@@ -125,3 +127,5 @@ std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_s
     }
     return {};
 }
+
+} // namespace apollo_client

@@ -11,6 +11,7 @@
 #include <cpprest/http_client.h>
 #include <tuple>
 #include "apollo_base.h"
+#include <spdlog/spdlog.h>
 
 void DumpProperties(const std::map<std::string, std::string> &property)
 {
@@ -20,6 +21,9 @@ void DumpProperties(const std::map<std::string, std::string> &property)
     }
 }
 
+namespace apollo_client
+{
+
 struct apolloEnv
 {
     std::string address_ = "http://localhost:8080";
@@ -28,7 +32,7 @@ struct apolloEnv
     std::string namespace_name_ = "codereviwNS";
 };
 
-// apollo客户端类
+// apollo客户端测试类
 class ApolloClient : public apollo_base
 {
 public:
@@ -78,95 +82,5 @@ private:
     std::thread long_poll_thread_;
 };
 
-// only one namespace for a client
-class ApolloClientSingleNs : public apollo_base
-{
-public:
-    using Callback = std::function<void()>;
-    struct env_base
-    {
-        std::string address_ = "http://localhost:8080";
-        std::string appid_name_;
-        std::string cluster_name_ = "default";
-        std::string namespace_name_ = "application";
-    };
-
-    ApolloClientSingleNs() = default;
-
-    void init(const std::string &address,
-              const std::string &appid,
-              const std::string &clusterName,
-              const std::string &namespaceName,
-              const Callback &c,
-              bool triggle_call_back);
-
-    void setCallback(const Callback &cb);
-
-    void setCallback(Callback &&cb);
-
-    void turnOnCallback();
-
-    void turnOffCallback();
-
-    std::string getConfigNoBufferByKey(const std::string &key);
-
-    std::string getConfigLocalBufferByKey(const std::string &key);
-
-    ~ApolloClientSingleNs() override
-    {
-        start_ = false;
-        if (loop_thread_.joinable()) {
-            loop_thread_.join();
-        }
-    }
-
-private:
-    bool updateConfigMap();
-
-    void updateConfigMapByKey(const std::string &key);
-    //    void updateConfigMapByKeyVector(); TODO
-
-    web::http::status_code checkNotify();
-
-    void submitNotificationsAsync();
-
-    void submitNotificationFunc();
-
-private:
-    env_base env_;
-    std::atomic<bool> start_{false};
-    std::atomic<bool> b_call_back{false};
-    std::map<std::string, std::string> config_map_;
-    std::mutex config_map_mt_;
-    std::tuple<std::string, int32_t> nsNid_{"", -1};
-    std::thread loop_thread_;
-    Callback call_back_;
-};
-
-class ApolloClientMultiNs : public apollo_base
-{
-public:
-    using namespaceConfigMap = std::map<std::string, std::map<std::string, std::string>>;
-    using namespaceNotifyMap = std::map<std::string, int32_t>;
-    using Callback = std::function<void()>;
-    struct env_base
-    {
-        std::string address_ = "http://localhost:8080";
-        std::string appid_name_;
-        std::string cluster_name_ = "default";
-        std::vector<std::string> ns_name_vec_; //maybe exist multi namespace and multi config
-    };
-
-private:
-    env_base env_;
-    std::atomic<bool> start_{false};
-    std::atomic<bool> b_call_back_{false};
-    namespaceConfigMap ns_config_map_;
-    std::mutex ns_config_map_mt_;
-    namespaceNotifyMap ns_notify_map_;
-    std::mutex ns_notify_map_mt_;
-    std::thread loop_thread_;
-    Callback call_back;
-};
-
+} // namespace apollo_client
 #endif

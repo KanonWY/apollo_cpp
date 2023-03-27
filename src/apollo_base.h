@@ -4,6 +4,9 @@
 #include <string>
 #include <map>
 
+
+namespace apollo_client
+{
 class apollo_base
 {
 public:
@@ -26,5 +29,6 @@ public:
 
     virtual ~apollo_base() = default;
 };
+}
 
 #endif
