@@ -6,3 +6,7 @@ target_link_libraries(sample_mul_ns PUBLIC apollo_cpp)
 
 add_executable(sample_public_ns sample_public_ns.cpp)
 target_link_libraries(sample_public_ns PUBLIC apollo_cpp)
+
+
+add_executable(sample_apollo_base sample_apollo_base.cpp)
+target_link_libraries(sample_apollo_base PUBLIC apollo_cpp)
