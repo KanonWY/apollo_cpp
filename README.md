@@ -236,7 +236,7 @@ namespace: [
     ......
 ]
 ```
-#### 3.3 可用模式
+#### 3.3 properties格式的数据配置
 
 详细示例：sample_public_ns.cpp
 
@@ -316,13 +316,23 @@ namespace: [
  * */
 ```
 
+#### 3.4 yaml文件类型配置支持
+
+新增了`apollo_client::apollo_mul_yaml_client`子类可以用于解析参数服务器上配置的`yaml`文件类型。具体示例见`sample_client_mul_yaml.cpp`。
+
+```cpp
+apollo_client::apollo_mul_yaml_client client;
+//监听SampleApp下的default集群下的两个yaml命名空间配置。
+client.init("http://localhost:8080", "SampleApp", "default", {"test_yaml.yaml", "test_yaml22.yaml"});
+//可以使用getNsNameConfigNode接口获取配置。
+ auto node = client.getNsNameConfigNode("test_yaml.yaml");
+```
+
 ### 初步简单架构
 
 每一个车仅有一个守护服务器与云参数服务器通信，维持长连接，更新参数信息。车内程序从守护服务器中获取参数。
 
-![初步家构图](https://github.com/KanonWY/apollo_cpp/blob/main/images/%E5%9F%BA%E6%9C%AC%E6%9E%B6%E6%9E%84.svg)
-
-
+![初步架构图](https://github.com/KanonWY/apollo_cpp/blob/main/images/%E5%88%9D%E6%AD%A5%E6%9E%B6%E6%9E%84.png?raw=true)
 
 ### ref
 
