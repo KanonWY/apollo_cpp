@@ -1,7 +1,9 @@
 #include <cpprest/http_client.h>
-#include "const_url_value.h"
 #include "apollo_base.h"
 #include <spdlog/spdlog.h>
+#include <yaml-cpp/yaml.h>
+#include "yaml_code_template.h"
+#include "const_url_value.h"
 
 namespace apollo_client
 {
@@ -34,7 +36,7 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std
         if (response.status_code() == web::http::status_codes::OK) {
             // return a json object
             auto jsonData = response.extract_json().get();
-            SPDLOG_INFO("jsonData content {}",jsonData.serialize().c_str());
+            SPDLOG_INFO("jsonData content {}", jsonData.serialize().c_str());
             //get configurations from json object
             auto configJsonObj = jsonData[U(CONFIGURATIONS_NAME)].as_object();
             // fill to map
@@ -50,7 +52,11 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std
     return resMap;
 }
 
-bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, const std::string &appidName, const std::string &namespaceName, const std::string &clusterName, std::map<std::string, std::string> &output)
+bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url,
+                                         const std::string &appidName,
+                                         const std::string &namespaceName,
+                                         const std::string &clusterName,
+                                         std::map<std::string, std::string> &output)
 {
     if ((config_server_url.size() + appidName.size() + namespaceName.size() + clusterName.size()) > 200) {
         SPDLOG_ERROR("url larger than 200!");
@@ -90,7 +96,11 @@ bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url, c
     return false;
 }
 
-std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_server_url, const std::string &appidName, const std::string &namespaceName, const std::string &clusterName, const std::string &key)
+std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_server_url,
+                                                     const std::string &appidName,
+                                                     const std::string &namespaceName,
+                                                     const std::string &clusterName,
+                                                     const std::string &key)
 {
     if ((config_server_url.size() + appidName.size() + namespaceName.size() + clusterName.size()) > 200) {
         SPDLOG_ERROR("url larger than 200!");
@@ -128,7 +138,10 @@ std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_s
     }
     return {};
 }
-std::map<std::string, std::string> apollo_base::getConfigNoBufferInnerByYAML(const std::string &config_server_url, const std::string &appid_name, const std::string &namespace_name, const std::string &cluster_name)
+std::map<std::string, std::string> apollo_base::getConfigNoBufferInnerByYAML(const std::string &config_server_url,
+                                                                             const std::string &appid_name,
+                                                                             const std::string &namespace_name,
+                                                                             const std::string &cluster_name)
 {
     if ((config_server_url.size() + appid_name.size() + namespace_name.size() + cluster_name.size()) > 200) {
         SPDLOG_ERROR("url large than 200");
@@ -158,8 +171,23 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInnerByYAML(con
             auto jsonData = response.extract_json().get();
             SPDLOG_INFO("jsonData type = {}", jsonData.type());
             SPDLOG_INFO("jsonData content = {}", jsonData.serialize().c_str());
+
+            // try to use yaml_cpp to parse the content
             //get configurations from json object
             auto configJsonObj = jsonData[U(CONFIGURATIONS_NAME)].as_object();
+
+            SPDLOG_INFO("configJsonObj = {}", jsonData[U(CONFIGURATIONS_NAME)].serialize().c_str());
+            YAML::Node node = YAML::Load(jsonData[U(CONFIGURATIONS_NAME)].serialize().c_str());
+            SPDLOG_INFO("node's type = {}", node.Type());
+            if (node["content"]) {
+                SPDLOG_INFO("conetnt = {}", node["content"].as<std::string>());
+                YAML::Node nodeContent = YAML::Load(node["content"].as<std::string>());
+                SPDLOG_INFO("nodeContent type = {}", nodeContent.Type());
+                SPDLOG_INFO("nodeContent[version] = {}", nodeContent["version"].as<std::string>());
+                SPDLOG_INFO("properties type = {}", nodeContent["properties"].Type());
+                SPDLOG_INFO("properties[detected_objects_topic].type = {}", nodeContent["properties"]["bg_topic"]["value"].as<std::string>());
+            }
+
             // fill to map
             for (auto &configItem : configJsonObj) {
                 resMap.insert({configItem.first, configItem.second.as_string()});

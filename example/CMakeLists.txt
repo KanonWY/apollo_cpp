@@ -10,3 +10,10 @@ target_link_libraries(sample_public_ns PUBLIC apollo_cpp)
 
 add_executable(sample_apollo_base sample_apollo_base.cpp)
 target_link_libraries(sample_apollo_base PUBLIC apollo_cpp)
+
+add_executable(sample_client_yaml_base sample_client_yaml_base.cpp)
+target_link_libraries(sample_client_yaml_base PUBLIC apollo_cpp)
+
+
+add_executable(sample_client_mul_yaml sample_client_mul_yaml.cpp)
+target_link_libraries(sample_client_mul_yaml PUBLIC apollo_cpp)

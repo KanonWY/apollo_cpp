@@ -1,13 +1,6 @@
 #include "apollo_base.h"
 #include <spdlog/spdlog.h>
-
-struct test_env
-{
-    std::string base_url_;
-    std::string appid_;
-    std::string namespace_;
-    std::string cluster_;
-};
+#include "sample_base.h"
 
 void test_get_config_nobuffer_yaml()
 {
