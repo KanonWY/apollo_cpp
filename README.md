@@ -316,6 +316,14 @@ namespace: [
  * */
 ```
 
+### 初步简单架构
+
+每一个车仅有一个守护服务器与云参数服务器通信，维持长连接，更新参数信息。车内程序从守护服务器中获取参数。
+
+![初步家构图](https://github.com/KanonWY/apollo_cpp/blob/main/images/%E5%9F%BA%E6%9C%AC%E6%9E%B6%E6%9E%84.svg)
+
+
+
 ### ref
 
 [cpprest example](http://www.atakansarioglu.com/easy-quick-start-cplusplus-rest-client-example-cpprest-tutorial/)
