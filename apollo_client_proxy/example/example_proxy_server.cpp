@@ -1,34 +1,8 @@
-#include "apollo_client_proxy.h"
 #include <iostream>
-#include <map>
-#include <string>
+#include "apollo_client_proxy.h"
 #include "basemessage.h"
+
 #define PORT 12345
-
-
-
-//std::vector<char> pack_write(const std::string &response)
-//{
-//    std::cout << "package_write" << std::endl;
-//    STcpHeader tcp_header;
-//    const size_t psize = response.size();
-//    tcp_header.psize_n = htonl(static_cast<uint32_t>(psize));
-//    std::vector<char> packed_response(sizeof(tcp_header) + psize);
-//    memcpy(packed_response.data(), &tcp_header, sizeof(tcp_header));
-//    memcpy(packed_response.data() + sizeof(tcp_header), response.data(),
-//           psize);
-//    return packed_response;
-//}
-
-
-void unpack_request(std::string& request)
-{
-    char* data = new char[request.size()];
-    easy_tcp::STcpHeader *tcp_header = reinterpret_cast< easy_tcp::STcpHeader*>(data);
-}
-
-
-
 
 int reqFunc(const std::string &request, std::string &response)
 {
@@ -84,21 +58,21 @@ int reqFunc(const std::string &request, std::string &response)
     return 0;
 }
 
-void eventFunc( easy_tcp::Server_Event event, const std::string &message)
+void eventFunc(easy_tcp::Server_Event event, const std::string &message)
 {
     std::cout << "eventFunc" << std::endl;
 }
 
+
+
 int main()
 {
-    easy_tcp::apollo_client_proxy proxy_server;
+    std::map<std::string, std::vector<std::string>> m;
+    m.insert({"SampleApp",{"test_yaml.yaml"}});
+    easy_tcp::apollo_proxy_server server;
+    server.Init("http://localhost:8080", "default",m);
 
-//    proxy_server.start([](auto && PH1, auto && PH2) { return reqFunc(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); },
-//                 [](auto && PH1, auto && PH2) { return eventFunc(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }, PORT);
-//
-//    while (true) {
-//        std::this_thread::sleep_for(std::chrono::microseconds(100));
-//    }
-
-    return 0;
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
 }

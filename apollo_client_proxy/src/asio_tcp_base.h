@@ -4,6 +4,9 @@
 #include "asio.hpp"
 #include <iostream>
 
+namespace easy_tcp
+{
+
 enum Server_Event
 {
     server_event_none = 0,
@@ -27,13 +30,15 @@ struct STcpHeader
     uint32_t reserved3 = 0; // reserved
 };
 
-using RequestCallbackT = std::function<int(const std::string &request, std::string &response)>;
-using EventCallbackT = std::function<void(Server_Event event, const std::string &message)>;
+class CTcpServer;
+
+using RequestCallbackT = std::function<int(const std::string &request, std::string &response, CTcpServer *sp)>;
+using EventCallbackT = std::function<void(Server_Event event, const std::string &message, CTcpServer *sp)>;
 
 class CAsioSession
 {
 public:
-    CAsioSession(asio::io_service &io_service) : socket_(io_service), data_{} {}
+    CAsioSession(asio::io_service &io_service, CTcpServer *sp) : socket_(io_service), data_{}, data_sp_(sp) {}
 
     asio::ip::tcp::socket &socket() { return socket_; }
 
@@ -78,7 +83,7 @@ private:
                     // std::cout << "CAsioSession::handle_read final request size " <<
                     // request_.size() << std::endl;
                     response_.clear();
-                    request_callback_(request_, response_);
+                    request_callback_(request_, response_, data_sp_);
                     request_.clear();
                     // std::cout << "CAsioSession::handle_read server callback executed -
                     // reponse size " << response_.size() << std::endl;
@@ -98,7 +103,7 @@ private:
                 // handle the disconnect
                 if (event_callback_) {
                     event_callback_(server_event_disconnected,
-                                    "CAsioSession disconnected on read");
+                                    "CAsioSession disconnected on read", data_sp_);
                 }
             }
             delete this;
@@ -130,7 +135,7 @@ private:
                 // handle the disconnect
                 if (event_callback_) {
                     event_callback_(server_event_disconnected,
-                                    "CAsioSession disconnected on write");
+                                    "CAsioSession disconnected on write", data_sp_);
                 }
             }
             delete this;
@@ -143,7 +148,7 @@ private:
     std::string request_;
     std::string response_;
     std::vector<char> packed_response_;
-
+    CTcpServer *data_sp_;
     enum
     {
         max_length = 64 * 1024
@@ -154,16 +159,17 @@ private:
 class CAsioServer
 {
 public:
-    CAsioServer(asio::io_service &io_service, unsigned short port)
+    CAsioServer(asio::io_service &io_service, unsigned short port, CTcpServer *sp)
         : io_service_(io_service),
           acceptor_(io_service,
                     asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
-          connect_cnt_(0)
+          connect_cnt_(0),
+          data_sp_(sp)
     {
         start_accept();
     }
 
-    bool is_connected() { return (connect_cnt_ > 0); }
+    bool is_connected() const { return (connect_cnt_ > 0); }
 
     void add_request_callback1(RequestCallbackT callback)
     {
@@ -177,7 +183,7 @@ public:
 private:
     void start_accept()
     {
-        CAsioSession *new_session = new CAsioSession(io_service_);
+        CAsioSession *new_session = new CAsioSession(io_service_, data_sp_);
         acceptor_.async_accept(new_session->socket(),
                                std::bind(&CAsioServer::handle_accept, this,
                                          new_session, std::placeholders::_1));
@@ -189,7 +195,7 @@ private:
             // handle the connect
             connect_cnt_++;
             if (event_cb_) {
-                event_cb_(server_event_connected, "CAsioSession connected");
+                event_cb_(server_event_connected, "CAsioSession connected", data_sp_);
             }
 
             new_session->start();
@@ -209,7 +215,7 @@ private:
     int on_request(const std::string &request, std::string &response)
     {
         if (request_cb_) {
-            return request_cb_(request, response);
+            return request_cb_(request, response, data_sp_);
         }
         return 0;
     }
@@ -228,7 +234,7 @@ private:
         }
 
         if (event_cb_) {
-            event_cb_(event, message);
+            event_cb_(event, message, data_sp_);
         }
     }
 
@@ -237,6 +243,8 @@ private:
     RequestCallbackT request_cb_;
     EventCallbackT event_cb_;
     int connect_cnt_;
+    CTcpServer *data_sp_;
 };
+} // namespace easy_tcp
 
 #endif

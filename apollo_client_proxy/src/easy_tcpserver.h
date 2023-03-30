@@ -9,16 +9,16 @@ class CTcpServer
 {
 public:
     CTcpServer();
-    ~CTcpServer();
+    virtual ~CTcpServer();
 
     void Create();
     void Destroy();
 
     void Start(RequestCallbackT request_callback_,
-               EventCallbackT event_callback_);
+               EventCallbackT event_callback_,CTcpServer* sp);
 
     void Start(RequestCallbackT request_callback_,
-               EventCallbackT event_callback_, short port);
+               EventCallbackT event_callback_, short port,CTcpServer* sp);
 
     void Stop();
 
@@ -36,6 +36,7 @@ protected:
     std::shared_ptr<asio::io_service> m_io_service;
     std::shared_ptr<CAsioServer> m_server;
     std::thread m_server_thread;
+    CTcpServer *data_sp_;
 };
 }; // namespace easy_tcp
 

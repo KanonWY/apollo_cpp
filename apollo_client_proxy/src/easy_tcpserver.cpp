@@ -1,5 +1,7 @@
 #include "easy_tcpserver.h"
 
+#include <utility>
+
 namespace easy_tcp
 {
 CTcpServer::CTcpServer() : m_started(false) {}
@@ -11,13 +13,13 @@ void CTcpServer::Create() {}
 void CTcpServer::Destroy() { Stop(); }
 
 void CTcpServer::Start(RequestCallbackT request_callback_,
-                       EventCallbackT event_callback_)
+                       EventCallbackT event_callback_,  CTcpServer* sp)
 {
     if (m_started)
         return;
     if (m_server != nullptr)
         return;
-
+    data_sp_ = sp;
     m_server_thread = std::thread(&CTcpServer::ServerThread, this, 0,
                                   request_callback_, event_callback_);
 
@@ -25,13 +27,13 @@ void CTcpServer::Start(RequestCallbackT request_callback_,
 }
 
 void CTcpServer::Start(RequestCallbackT request_callback_,
-                       EventCallbackT event_callback_, short port)
+                       EventCallbackT event_callback_, short port, CTcpServer* sp)
 {
     if (m_started)
         return;
     if (m_server != nullptr)
         return;
-
+    data_sp_ = sp;
     m_server_thread = std::thread(&CTcpServer::ServerThread, this, port,
                                   request_callback_, event_callback_);
 
@@ -69,10 +71,10 @@ void CTcpServer::ServerThread(std::uint32_t port_,
 {
     m_io_service = std::make_shared<asio::io_service>();
     m_server = std::make_shared<CAsioServer>(*m_io_service,
-                                             static_cast<unsigned short>(port_));
+                                             static_cast<unsigned short>(port_),data_sp_);
 
-    m_server->add_request_callback1(request_callback_);
-    m_server->add_event_callback(event_callback_);
+    m_server->add_request_callback1(std::move(request_callback_));
+    m_server->add_event_callback(std::move(event_callback_));
 
     m_io_service->run();
 

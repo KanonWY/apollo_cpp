@@ -7,3 +7,7 @@ target_link_libraries(example_tcp_server Easy_tcp)
 
 add_executable(example_apollo_proxy example_apollo_proxy.cpp)
 target_link_libraries(example_apollo_proxy Easy_tcp)
+
+
+add_executable(example_proxy_server example_proxy_server.cpp)
+target_link_libraries(example_proxy_server Easy_tcp)

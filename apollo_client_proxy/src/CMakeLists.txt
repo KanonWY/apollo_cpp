@@ -6,7 +6,7 @@ file(GLOB_RECURSE CPP_FILES "*.cpp")
 message(STATUS "----> CPP_FILES ${CPP_FILES}")
 
 add_library(Easy_tcp ${CPP_FILES})
-target_link_libraries(Easy_tcp gprotoc)
+target_link_libraries(Easy_tcp gprotoc apollo_cpp)
 target_include_directories(Easy_tcp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 

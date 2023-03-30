@@ -1,18 +1,86 @@
 #include "apollo_client_proxy.h"
+#include "basemessage.h"
 
 #include <utility>
 
 namespace easy_tcp
 {
-apollo_client_proxy::apollo_client_proxy()
+
+apollo_proxy_server::apollo_proxy_server()
 {
-    //构建假数据
-    std::map<std::string, std::string> ns_data_1 = {{"test_yaml.yaml", "key:value"}};
-    test_data_map.insert({"SampleApp", ns_data_1});
+    requestCallback_ = defaultRequestCallback;
+    eventCallback_ = defaultEventCallback;
 }
-void apollo_client_proxy::start(RequestCallbackT request_callback_,
-                                EventCallbackT event_callback_, short port){
-    tcp_server_.Create();
-    tcp_server_.Start(std::move(request_callback_),std::move(event_callback_),port);
-};
+
+int apollo_proxy_server::defaultRequestCallback(const std::string &request, std::string &response, CTcpServer *sp)
+{
+    std::cout << "request" << std::endl;
+    //get map
+    auto *p = dynamic_cast<apollo_proxy_server *>(sp);
+    auto data = p->getDataMap();
+
+    // parse protobuf
+    EASY_TCP::MsgContent content;
+    content.ParseFromString(request);
+    std::cout << "content version = " << content.version() << std::endl;
+    auto version = content.version();
+    auto cmd = content.cmd();
+    auto inner_content_str = content.content();
+
+    EASY_TCP::RequestContent requestContent;
+    requestContent.ParseFromString(inner_content_str);
+    auto ts = requestContent.timestamp();
+
+    auto appid = requestContent.appid();
+
+    std::vector<std::string> ns_v;
+    for (int i = 0; i < requestContent.namespace_vec_size(); ++i) {
+        ns_v.push_back(requestContent.namespace_vec(i));
+    }
+    std::cout << "appid = " << appid.c_str() << std::endl;
+    for (const auto &item : ns_v) {
+        std::cout << "ns = " << item.c_str() << std::endl;
+    }
+    std::map<std::string, std::string> returnMap;
+    for (const auto &i : ns_v) {
+        if (data[appid]) {
+            std::cout << "ns = " << i << std::endl;
+            auto cl = data[appid];
+            auto node = cl->getNsNameConfigNode(i);
+            if (node) {
+                returnMap.insert({i, node.as<std::string>()});
+            } else {
+                std::cout << "node no exsit" << std::endl;
+            }
+        }
+    }
+    //return map info  to client
+
+
+
+    return 0;
+}
+
+void apollo_proxy_server::defaultEventCallback(Server_Event event, const std::string &message, CTcpServer *sp)
+{
+    std::cout << "event" << std::endl;
+}
+
+void apollo_proxy_server::Init(const std::string &address, const std::string &cluster,
+                               const std::map<std::string, std::vector<std::string>> &appid_map, unsigned short port)
+{
+    for (const auto &item : appid_map) {
+        auto apolloClient = std::make_shared<apollo_client::apollo_mul_yaml_client>();
+        apolloClient->init(address, item.first, cluster, item.second);
+        data_map_.insert({item.first, apolloClient});
+    }
+    Create();
+    Start(requestCallback_, eventCallback_, port, this);
+}
+
+std::map<std::string, apollo_proxy_server::apolloClientSptr> apollo_proxy_server::getDataMap()
+{
+    return data_map_;
+}
+
 } // namespace easy_tcp

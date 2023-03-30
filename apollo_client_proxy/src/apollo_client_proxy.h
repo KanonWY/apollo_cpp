@@ -2,23 +2,38 @@
 #define __APOLLO_CLIENT_PROXY_H__
 
 #include "easy_tcpserver.h"
+#include "apollo_client_mul_yaml.h"
 #include <map>
 #include <string>
 
+
+#define PORT 12345
+
 namespace easy_tcp
 {
-class apollo_client_proxy
+
+class apollo_proxy_server : public CTcpServer
 {
 public:
-    apollo_client_proxy();
-    void start(RequestCallbackT request_callback_,
-               EventCallbackT event_callback_, short port);
-    void stop();
-private:
-    std::map<std::string, std::map<std::string,std::string>> test_data_map;
+    using apolloClientSptr = std::shared_ptr<apollo_client::apollo_mul_yaml_client>;
 
-    CTcpServer tcp_server_;
+    apollo_proxy_server();
+    void Init(const std::string& address, const std::string& cluster,
+             const std::map<std::string, std::vector<std::string>>& appid_map, unsigned short port = PORT);
+
+private:
+    static int defaultRequestCallback(const std::string &request, std::string &response, CTcpServer *sp);
+
+    static void defaultEventCallback(Server_Event event, const std::string &message, CTcpServer *sp);
+
+    std::map<std::string, apolloClientSptr> getDataMap();
+
+private:
+    std::map<std::string, apolloClientSptr> data_map_;
+    RequestCallbackT  requestCallback_;
+    EventCallbackT eventCallback_;
 };
-}; // namespace Easy_tcp
+
+}; // namespace easy_tcp
 
 #endif
