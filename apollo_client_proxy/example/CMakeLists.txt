@@ -2,6 +2,10 @@ add_executable(example_tcp_client example_tcp_client.cpp)
 target_link_libraries(example_tcp_client Easy_tcp)
 
 
+add_executable(example_tcp_client_B example_tcp_client_B.cpp)
+target_link_libraries(example_tcp_client_B Easy_tcp)
+
+
 add_executable(example_tcp_server example_tcp_server.cpp)
 target_link_libraries(example_tcp_server Easy_tcp)
 

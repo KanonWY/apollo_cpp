@@ -31,7 +31,7 @@ void request_callback(const std::string &data_, bool successful_)
     for(const auto& item :kv)
     {
         std::cout << "key = " << item.first.c_str() << std::endl;
-//        std::cout << "value = " << item.second.c_str() << std::endl;
+        //        std::cout << "value = " << item.second.c_str() << std::endl;
     }
 }
 
@@ -71,7 +71,7 @@ std::string packSendMsg(const std::string &token, const std::string &appid, cons
     content_out.set_content(inner_str.c_str());
     inner_str.clear();
     content_out.SerializeToString(&inner_str);
-    return inner_str;    
+    return inner_str;
 }
 
 
@@ -101,7 +101,7 @@ int main()
     while(true) {
         std::string resquest, response;
         // create request.
-        resquest = packSendMsg("", "SampleApp", {"test_yaml.yaml"});
+        resquest = packSendMsg("", "SampleApp", {"test_yaml22.yaml"});
         auto size = client.ExecuteRequest(resquest, -1, response);
         if (size > 0) {
             std::cout << "size = " << size << std::endl;

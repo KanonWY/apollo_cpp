@@ -68,7 +68,7 @@ void eventFunc(easy_tcp::Server_Event event, const std::string &message)
 int main()
 {
     std::map<std::string, std::vector<std::string>> m;
-    m.insert({"SampleApp",{"test_yaml.yaml"}});
+    m.insert({"SampleApp",{"test_yaml.yaml","test_yaml22.yaml"}});
     easy_tcp::apollo_proxy_server server;
     server.Init("http://localhost:8080", "default",m);
 
