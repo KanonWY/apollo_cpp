@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package EASY_TCP;
+
+enum CMD_TYPE {
+  NULL_CMD = 0;
+  REQUEST = 1;
+  RESPONSE = 2;
+}
+
+message MsgContent {
+  string version = 1;
+  CMD_TYPE cmd = 2;
+  bytes content = 3;
+}
+
+message RequestContent {
+  int64 timestamp = 1;
+  int64 sequence = 2;
+  string host_info = 3;
+  string token = 4;
+  string appid = 5;
+  repeated string namespace_vec = 6;
+}
+
+message ResponseContent {
+  int64 timestamp = 1;
+  int64 ack = 2;
+  string appid = 3;
+  map<string, string> namespace_config_map = 4;
+}
