@@ -29,7 +29,7 @@ endif()
 project(Apollo_CPP_Client LANGUAGES CXX C)
 
 # set cpp 11 standard not allow extension
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

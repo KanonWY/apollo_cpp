@@ -334,6 +334,42 @@ client.init("http://localhost:8080", "SampleApp", "default", {"test_yaml.yaml", 
 
 ![初步架构图](https://github.com/KanonWY/apollo_cpp/blob/main/images/%E5%88%9D%E6%AD%A5%E6%9E%B6%E6%9E%84.png?raw=true)
 
+
+### apollo_client_proxy
+新增了一个基于ASIO,pb的简单tcp收发服务，用于配置客户端与实际客户端之间通信。协议为:
+```protobuf
+//apollo_client_proxy/src/protoc/msg.proto
+
+syntax = "proto3";
+package EASY_TCP;
+enum CMD_TYPE {
+  NULL_CMD = 0;
+  REQUEST = 1;
+  RESPONSE = 2;
+}
+
+message MsgContent {
+  string version = 1;
+  CMD_TYPE cmd = 2;
+  bytes content = 3;
+}
+
+message RequestContent {
+  int64 timestamp = 1;
+  int64 sequence = 2;
+  string host_info = 3;
+  string token = 4;
+  string appid = 5;
+  repeated string namespace_vec = 6;
+}
+message ResponseContent {
+  int64 timestamp = 1;
+  int64 ack = 2;
+  string appid = 3;
+  map<string, string> namespace_config_map = 4;
+}
+```
+
 ### ref
 
 [cpprest example](http://www.atakansarioglu.com/easy-quick-start-cplusplus-rest-client-example-cpprest-tutorial/)
