@@ -135,7 +135,6 @@ bool CTcpClient::SendRequest(const std::string &request_)
 {
     size_t written(0);
     try {
-        // check for old (timeouted ?) reponses
         const size_t resp_size = m_socket->available();
         if (resp_size > 0) {
             std::vector<char> resp_buffer(resp_size);
@@ -189,6 +188,7 @@ size_t CTcpClient::ReceiveResponse(std::string &response_, int timeout_)
             m_socket->async_read_some(
                 asio::buffer(&tcp_header, sizeof(tcp_header)),
                 [&](const asio::error_code & /*ec*/, std::size_t bytes_read) {
+                    std::cout << "hello" << std::endl;
                     if (bytes_read != sizeof(tcp_header))
                         read_failed = true;
                     else

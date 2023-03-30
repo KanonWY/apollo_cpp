@@ -56,8 +56,27 @@ int apollo_proxy_server::defaultRequestCallback(const std::string &request, std:
     }
     //return map info  to client
 
+    EASY_TCP::ResponseContent responseContent;
+    responseContent.set_timestamp(getTimestampNow());
+    responseContent.set_ack(2200);
+    responseContent.set_appid(appid);
+    auto ma = responseContent.mutable_namespace_config_map();
+    for(const auto item : returnMap)
+    {
+        ma->insert({item.first, item.second});
+    }
+    std::cout << "map size = " << responseContent.namespace_config_map().size() << std::endl;
+    std::string sendstr;
+    responseContent.SerializeToString(&sendstr);
+    EASY_TCP::MsgContent sendmsg;
+    sendmsg.set_version(version);
+    sendmsg.set_cmd(EASY_TCP::CMD_TYPE::RESPONSE);
+    sendmsg.set_content(sendstr.c_str());
+    sendstr.clear();
+    sendmsg.SerializeToString(&sendstr);
 
-
+    response = sendstr;
+    std::cout << "response size = " << response.size() << std::endl;
     return 0;
 }
 
