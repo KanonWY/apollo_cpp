@@ -201,4 +201,233 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInnerByYAML(con
     return resMap;
 }
 
+// openapi which use token to modify server's config.
+
+std::optional<std::string> apollo_openapi_base::getConifgNoProperties(const std::string &address,
+                                                                      const std::string &env,
+                                                                      const std::string &appid,
+                                                                      const std::string &clustername,
+                                                                      const std::string &namespacename)
+{
+    if ((address.size() + env.size() + clustername.size() + namespacename.size()) > 256) {
+        SPDLOG_ERROR("to much url param");
+    }
+    std::map<std::string, std::string> resMap;
+    std::string base_url;
+    base_url.reserve(256);
+    {
+        char *url = new char[256];
+        sprintf(url, "http://%s/openapi/v1/envs/%s/apps/%s/clusters/%s/namespaces/%s/items/content",
+                address.c_str(), env.c_str(), appid.c_str(), clustername.c_str(), namespacename.c_str());
+        base_url = url;
+        delete[] url;
+    }
+    try {
+
+        SPDLOG_INFO("URL = {}", base_url.c_str());
+        auto requestClient = web::http::client::http_client(base_url);
+
+        // create header, add_token
+        web::http::http_headers headers;
+        headers.add(U("Authorization"), U("e2c11cde77347891701d937b5d31bd7aaab2f29451fa5fa8340ebc7907c40d3b"));
+        headers.add(U("Content-Type"), U("application/json;charset=UTF-8"));
+
+        web::http::http_request request(web::http::methods::GET);
+        request.headers() = headers;
+
+        auto response = requestClient.request(request).get();
+
+        if (response.status_code() != web::http::status_codes::OK) {
+            SPDLOG_ERROR("Get {} error", base_url.c_str());
+            return {};
+        } else {
+            auto json_data = response.extract_json().get();
+            SPDLOG_INFO("type = {}", json_data.type());
+            if (json_data.type() == web::json::value::value_type::Null) {
+                SPDLOG_ERROR("Get {} error, return nullptr value!", base_url.c_str());
+            } else if (json_data.type() == web::json::value::value_type::Object) {
+                YAML::Node node = YAML::Load(json_data[U("value")].serialize().c_str());
+                if (node.Type() == YAML::NodeType::value::Scalar) {
+                    SPDLOG_INFO("node content = \n{}", node.as<std::string>());
+                    return node.as<std::string>();
+                }
+            }
+        }
+    } catch (std::exception &e) {
+        SPDLOG_ERROR("Exception: {}", e.what());
+    }
+    return {};
+}
+
+bool apollo_openapi_base::modifyConfigNoProperties(const std::string &address,
+                                                   const std::string &env,
+                                                   const std::string &appid,
+                                                   const std::string &clustername,
+                                                   const std::string &namespacename,
+                                                   const std::string &conifgstr,
+                                                   const std::string &modifyuserid,
+                                                   bool createIfnotExists,
+                                                   const std::string &comment,
+                                                   const std::string &createuerid)
+{
+    if ((address.size() + env.size() + clustername.size() + namespacename.size()) > 256) {
+        SPDLOG_ERROR("to much url param");
+        return false;
+    }
+    std::string base_url;
+    base_url.reserve(256);
+    {
+        char *url = new char[256];
+        sprintf(url, "http://%s/openapi/v1/envs/%s/apps/%s/clusters/%s/namespaces/%s/items/content",
+                address.c_str(), env.c_str(), appid.c_str(), clustername.c_str(), namespacename.c_str());
+        base_url = url;
+        delete[] url;
+    }
+    try {
+
+        SPDLOG_INFO("URL = {}", base_url.c_str());
+        auto requestClient = web::http::client::http_client(base_url);
+
+        //TODO add request param.
+
+        // create header, add_token
+        web::http::http_headers headers;
+        headers.add(U("Authorization"), U("e2c11cde77347891701d937b5d31bd7aaab2f29451fa5fa8340ebc7907c40d3b"));
+        headers.add(U("Content-Type"), U("application/json;charset=UTF-8"));
+
+        // create body add changed file
+        web::json::value data;
+        data[U("key")] = web::json::value::string("content");
+        data[U("value")] = web::json::value::string(conifgstr);
+        data[U("dataChangeLastModifiedBy")] = web::json::value::string(modifyuserid);
+        // data[U("comment")] = web::json::value::string(comment);
+        // data[U("dataChangeCreatedBy")] = web::json::value::string(createuerid);
+
+        web::http::http_request request(web::http::methods::PUT);
+        request.headers() = headers;
+        request.set_body(data);
+        auto response = requestClient.request(request).get();
+        if (response.status_code() == web::http::status_codes::OK) {
+            SPDLOG_INFO("modify success {}", response.status_code());
+            return true;
+        } else {
+            SPDLOG_ERROR("modify error {}", response.status_code());
+            return false;
+        }
+    } catch (std::exception &e) {
+        SPDLOG_ERROR("Exception: {}", e.what());
+        return false;
+    }
+}
+
+bool apollo_openapi_base::deleteConfig(const std::string &address,
+                                       const std::string &env,
+                                       const std::string &appid,
+                                       const std::string &clustername,
+                                       const std::string &namespacename,
+                                       const std::string &deleteuserid)
+{
+    if ((address.size() + env.size() + clustername.size() + namespacename.size()) > 256) {
+        SPDLOG_ERROR("to much url param");
+        return false;
+    }
+    std::string base_url;
+    base_url.reserve(256);
+    {
+        char *url = new char[256];
+        sprintf(url, "http://%s/openapi/v1/envs/%s/apps/%s/clusters/%s/namespaces/%s/items/content",
+                address.c_str(), env.c_str(), appid.c_str(), clustername.c_str(), namespacename.c_str());
+        base_url = url;
+        delete[] url;
+    }
+    try {
+        SPDLOG_INFO("URL = {}", base_url.c_str());
+        auto requestClient = web::http::client::http_client(base_url);
+
+        //TODO add request param.
+        web::http::uri_builder builder;
+        builder.append_query(U("key"), "content");
+        builder.append_query(U("operator"), deleteuserid.c_str());
+
+        // create header, add_token
+        web::http::http_headers headers;
+        headers.add(U("Authorization"), U("e2c11cde77347891701d937b5d31bd7aaab2f29451fa5fa8340ebc7907c40d3b"));
+        headers.add(U("Content-Type"), U("application/json;charset=UTF-8"));
+
+        web::http::http_request request(web::http::methods::DEL);
+        request.set_request_uri(builder.to_string());
+        request.headers() = headers;
+
+        auto response = requestClient.request(request).get();
+        if (response.status_code() == web::http::status_codes::OK) {
+            SPDLOG_INFO("delete config success {}", response.status_code());
+            return true;
+        } else {
+            SPDLOG_ERROR("delete config error {}", response.status_code());
+            return false;
+        }
+    } catch (std::exception &e) {
+        SPDLOG_ERROR("Exception: {}", e.what());
+        return false;
+    }
+}
+
+bool apollo_openapi_base::publishConfig(const std::string &address,
+                                        const std::string &env,
+                                        const std::string &appid,
+                                        const std::string &clusterName,
+                                        const std::string &namespacename,
+                                        const std::string &releaseTitle,
+                                        const std::string &releasedBy,
+                                        const std::string &releaseComment)
+{
+    if ((address.size() + env.size() + clusterName.size() + namespacename.size()) > 256) {
+        SPDLOG_ERROR("to much url param");
+        return false;
+    }
+    std::string base_url;
+    base_url.reserve(256);
+    {
+        char *url = new char[256];
+        sprintf(url, "http://%s/openapi/v1/envs/%s/apps/%s/clusters/%s/namespaces/%s/releases",
+                address.c_str(), env.c_str(), appid.c_str(), clusterName.c_str(), namespacename.c_str());
+        base_url = url;
+        delete[] url;
+    }
+    try {
+
+        SPDLOG_INFO("URL = {}", base_url.c_str());
+        auto requestClient = web::http::client::http_client(base_url);
+
+        //TODO add request param.
+
+        // create header, add_token
+        web::http::http_headers headers;
+        headers.add(U("Authorization"), U("e2c11cde77347891701d937b5d31bd7aaab2f29451fa5fa8340ebc7907c40d3b"));
+        headers.add(U("Content-Type"), U("application/json;charset=UTF-8"));
+
+        // create body add changed file
+        web::json::value data;
+        data[U("releaseTitle")] = web::json::value::string(releaseTitle);
+        data[U("releasedBy")] = web::json::value::string(releasedBy);
+        data[U("releaseComment")] = web::json::value::string(releaseComment);
+
+        web::http::http_request request(web::http::methods::POST);
+        request.headers() = headers;
+        request.set_body(data);
+        auto response = requestClient.request(request).get();
+        SPDLOG_INFO("content = {}", response.extract_json().get().serialize().c_str());
+        if (response.status_code() == web::http::status_codes::OK) {
+            SPDLOG_INFO("publishConfig success {}", response.status_code());
+            return true;
+        } else {
+            SPDLOG_ERROR("publish config error {}", response.status_code());
+            return false;
+        }
+    } catch (std::exception &e) {
+        SPDLOG_ERROR("Exception: {}", e.what());
+        return false;
+    }
+}
+
 } // namespace apollo_client

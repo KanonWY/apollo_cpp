@@ -12,3 +12,5 @@ apollo_client_proxy/src/protoc/gprotoc.tmp
 apollo_client_proxy/src/protoc/gprotoc.tmp/*
 apollo_client_proxy/src/protoc/protos.tmp
 apollo_client_proxy/src/protoc/protos.tmp/*
+.cache
+.cache/

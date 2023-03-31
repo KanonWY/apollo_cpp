@@ -141,25 +141,119 @@ class apollo_openapi_base
 public:
     std::set<std::map<std::string, std::string>> getAllAppInfo(const std::string &appIds);
 
-    // cluster about
+    // 1.get app env
+    // URL : http://{portal_address}/openapi/v1/apps/{appId}/envclusters
+    // Method : GET
+    std::string getAppenvInfo(const std::string &address,
+                              const std::string &appid);
 
-    // 1. get cluster info
+    // 2.get app detail info
+    // URL : http://{portal_address}/openapi/v1/apps
+    // Method : GET
+    std::string getAppInfo(const std::string &address);
 
-    // 2. create a new cluster
+    // 3. get cluster info (include cluster name, data change time)
+    // URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}
+    // METHOD： GET
+    std::string getClusterInfo(const std::string &address,
+                               const std::string &envinfo,
+                               const std::string &appid,
+                               const std::string &clustername);
 
-    // ns about
+    // 4. create cluster
+    // URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters
+    // Method: POST
+    std::string createCluster(const std::string &address,
+                              const std::string &envinfo,
+                              const std::string &appid);
 
-    // config about
+    // 5. get all  namespace info in a cluster.
+    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces
+    // Method: GET
+    std::string getNamespaceinfoInCluster(const std::string &address,
+                                          const std::string &env,
+                                          const std::string &appid,
+                                          const std::string &clustername);
 
-    // 1. get config
+    // 6. get a namespace info
+    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}
+    // Method: GET
+    std::string getSpecialNamespaceInfo(const std::string &address,
+                                        const std::string &env,
+                                        const std::string &appid,
+                                        const std::string &clustername,
+                                        const std::string &namespacesname);
 
-    // 2. add config
+    // 7. create a new namespace.
+    // URL: http://{portal_address}/openapi/v1/apps/{appId}/appnamespaces
+    // POST
+    std::string createNewNamespace(const std::string &address,
+                                   const std::string &appid);
 
-    // 3. modify config
+    // 8. locker interface TODO
 
-    // 4. delete config
+    //9. get config interface
+    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}
+    // Method: GET
+    std::optional<std::string> getConifgNoProperties(const std::string &address,
+                                                     const std::string &env,
+                                                     const std::string &appid,
+                                                     const std::string &clustername,
+                                                     const std::string &namespacename);
 
-    // 5. pub config
+    // 10. create new config
+    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items
+    // Method: POST
+    std::string createNewconfig(const std::string &address,
+                                const std::string &env,
+                                const std::string &appid,
+                                const std::string &clustername,
+                                const std::string &namespacename);
+
+    // 11. modify config
+    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}
+    // Method: GET
+    // DESC: if key == "content", the config file is not properties.
+    bool modifyConfigNoProperties(const std::string &address,
+                                  const std::string &env,
+                                  const std::string &appid,
+                                  const std::string &clustername,
+                                  const std::string &namespacename,
+                                  const std::string &conifgstr,
+                                  const std::string &modifyuserid,
+                                  bool createIfnotExists,
+                                  const std::string &comment,
+                                  const std::string &createuerid);
+
+    // 12. delete config
+    // URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}?
+    // Method: DELETE
+    bool deleteConfig(const std::string &address,
+                      const std::string &env,
+                      const std::string &appid,
+                      const std::string &clustername,
+                      const std::string &namespacename,
+                      const std::string &deleteuserid);
+
+    // 13. publish config
+    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/releases
+    // Method： POST
+    bool publishConfig(const std::string &address,
+                       const std::string &env,
+                       const std::string &appid,
+                       const std::string &clusterName,
+                       const std::string &namespacename,
+                       const std::string &releaseTitle,
+                       const std::string &releasedBy,
+                       const std::string &releaseComment);
+
+    // 14 rollback the config
+    // URL:  http://{portal_address}/openapi/v1/envs/{env}/releases/{releaseId}/rollback
+    // Method： PUT
+    // releaseid: rollback to which version.
+    void rollbackConfig(const std::string &address,
+                        const std::string &env,
+                        const std::string &releaseid);
 };
 
 } // namespace apollo_client
