@@ -79,8 +79,8 @@ Method: GET
 
 ```mermaid
 sequenceDiagram
-客户端 ->> Apollo远程服务: 请求远端服务【GET (appid，clusterName，notifications）】
-Apollo远程服务 ->> 客户端: 返回JSON数据（变化的namespace和最新的notificationId）
+车N参数中心 ->> Apollo配置中心: request[appid namespace clustername]
+Apollo配置中心 ->> 车N参数中心: 返回JSON数据
 ```
 
 3、配置更新图
@@ -89,10 +89,10 @@ Apollo远程服务 ->> 客户端: 返回JSON数据（变化的namespace和最新
 
 ```mermaid
 sequenceDiagram
-车N-参数中心 ->> Apollo配置值中心: GET 请求远端服务，带上自己的应用信息和通知信息
-Apollo远端服务 ->> Apollo远端服务: check msg from client.如果都是新的，保持住请求60s
-Apollo远端服务 -->> 车N-参数中心: 如果60s内没有变化，就在60秒时返回 HttpStatus 304
-Apollo远端服务 -->> 车N-参数中心: 如果60秒内失效或者立即实效，则返回有效的JSON数据，HttpStatus 200
+车N-参数中心 ->> Apollo配置中心: GET 请求远端服务，带上自己的应用信息和通知信息
+Apollo配置中心 ->> Apollo配置中心: check msg from client.如果都是新的，保持住请求60s
+Apollo配置中心 -->> 车N-参数中心: 如果60s内没有变化，就在60秒时返回 HttpStatus 304
+Apollo配置中心 -->> 车N-参数中心: 如果60秒内失效或者立即实效，则返回有效的JSON数据，HttpStatus 200
 车N-参数中心 -->> 车N-参数中心: 客户端判断返回status, 200:拉取非缓存新数据，更新notifications
 车N-参数中心 -->> 车N-参数中心: 客户端判断返回status, 304:配置没有变化，回到起始继续操作
 ```

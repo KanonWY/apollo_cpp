@@ -1,17 +1,22 @@
 #include "apollo_base.h"
 #include "sample_base.h"
 
-void test_get_conifg_by_openapi()
+/**
+ * @brief test get config by openapi
+ */
+void test_get_config_by_openapi()
 {
     test_env env = {"localhost:8070", "openapp", "testyaml.yaml", "default"};
     apollo_client::apollo_openapi_base openapi_client;
-    auto res = openapi_client.getConifgNoProperties(env.base_url_, "DEV", env.appid_, env.cluster_, env.namespace_);
+    auto res = openapi_client.getConfigNoProperties(env.base_url_, "DEV", env.appid_, env.cluster_, env.namespace_);
     if (res.has_value()) {
         std::cout << res.value().size() << std::endl;
     }
 }
 
-// test for modify yaml config
+/**
+ * @brief test for modify namespacename.yaml by openapi
+ */
 void test_modify_by_openapi()
 {
     test_env env = {"localhost:8070", "openapp", "testyaml.yaml", "default"};
@@ -30,7 +35,9 @@ void test_modify_by_openapi()
                                                        user);
 }
 
-// test for pushlish yaml file
+/**
+ * @brief test for publish namespacename.yaml by openapi.
+ */
 void test_publish_by_openapi()
 {
     test_env env = {"localhost:8070", "openapp", "testyaml.yaml", "default"};
@@ -47,8 +54,9 @@ void test_publish_by_openapi()
                                             env.namespace_, releasetitle, user, releaseComment);
 }
 
-//test delete yaml config
-
+/**
+ * @brief test for delete a namespace.yaml by open api
+ */
 void test_delete_yaml_config()
 {
     test_env env = {"localhost:8070", "openapp", "testyaml.yaml", "default"};

@@ -96,10 +96,10 @@ public:
      * @param cluster_name
      * @return
      */
-    std::map<std::string, std::string> getConfigNoBufferInnerByYAML(const std::string &config_server_url,
-                                                                    const std::string &appid_name,
-                                                                    const std::string &namespace_name,
-                                                                    const std::string &cluster_name);
+    static std::map<std::string, std::string> getConfigNoBufferInnerByYAML(const std::string &config_server_url,
+                                                                           const std::string &appid_name,
+                                                                           const std::string &namespace_name,
+                                                                           const std::string &cluster_name);
 
 public:
     /**
@@ -139,7 +139,6 @@ public:
         }
         try {
             auto requestClient = web::http::client::http_client(base_url);
-            SPDLOG_INFO("base_url = {}", base_url.c_str());
             auto response = requestClient.request(web::http::methods::GET).get();
             if (response.status_code() == web::http::status_codes::OK) {
                 auto json_data_from_server = response.extract_json().get();
@@ -227,6 +226,12 @@ public:
 class apollo_openapi_base
 {
 public:
+    /**
+     * @brief init the default token.
+     * @param token
+     */
+    void init(const std::string &token);
+
     /**
      * @brief get app env
      *        URL : http://{portal_address}/openapi/v1/apps/{appId}/envclusters
@@ -344,7 +349,7 @@ public:
      * @param namespacename
      * @return
      */
-    std::string createNewconfig(const std::string &address,
+    std::string createNewConfig(const std::string &address,
                                 const std::string &env,
                                 const std::string &appid,
                                 const std::string &clustername,
@@ -426,6 +431,16 @@ public:
     void rollbackConfig(const std::string &address,
                         const std::string &env,
                         const std::string &releaseid);
+
+    /**
+     * @brief get a headers which container given token.
+     * @param token
+     * @return
+     */
+    static web::http::http_headers getTokenHeader(const std::string &token);
+
+private:
+    std::string token_{};
 };
 
 } // namespace apollo_client

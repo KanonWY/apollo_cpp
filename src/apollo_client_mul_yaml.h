@@ -61,6 +61,12 @@ public:
     YAML::Node getNsNameConfigNode(const std::string &ns_name);
 
     /**
+     * @brief get all namespace string vector
+     * @return
+     */
+    std::vector<std::string> getAllNamespaces();
+
+    /**
      * @brief turn on the callback
      */
     void turnonCallback();
