@@ -339,11 +339,11 @@ public:
      * @param namespacename
      * @return
      */
-    std::optional<std::string> getConfigNoProperties(const std::string &address,
-                                                     const std::string &env,
-                                                     const std::string &appid,
-                                                     const std::string &clustername,
-                                                     const std::string &namespacename);
+    std::string getConfigNoProperties(const std::string &address,
+                                      const std::string &env,
+                                      const std::string &appid,
+                                      const std::string &clustername,
+                                      const std::string &namespacename);
 
     /**
      * @brief create new config

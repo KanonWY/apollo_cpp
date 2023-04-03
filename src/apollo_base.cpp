@@ -210,11 +210,11 @@ void apollo_openapi_base::init(const std::string &token)
     token_ = token;
 }
 
-std::optional<std::string> apollo_openapi_base::getConfigNoProperties(const std::string &address,
-                                                                      const std::string &env,
-                                                                      const std::string &appid,
-                                                                      const std::string &clustername,
-                                                                      const std::string &namespacename)
+std::string apollo_openapi_base::getConfigNoProperties(const std::string &address,
+                                                       const std::string &env,
+                                                       const std::string &appid,
+                                                       const std::string &clustername,
+                                                       const std::string &namespacename)
 {
     if ((address.size() + env.size() + clustername.size() + namespacename.size()) > 256) {
         SPDLOG_ERROR("to much url param");
@@ -297,6 +297,8 @@ bool apollo_openapi_base::modifyConfigNoProperties(const std::string &address,
         data[U("key")] = web::json::value::string("content");
         data[U("value")] = web::json::value::string(conifgstr);
         data[U("dataChangeLastModifiedBy")] = web::json::value::string(modifyuserid);
+        data[U("comment")] = web::json::value::string(comment);
+        data[U("dataChangeCreatedBy")] = web::json::value::string(createuerid);
 
         web::http::http_request request(web::http::methods::PUT);
         request.headers() = headers;
@@ -407,6 +409,7 @@ bool apollo_openapi_base::publishConfig(const std::string &address,
         request.headers() = headers;
         request.set_body(data);
         auto response = requestClient.request(request).get();
+        SPDLOG_INFO("content = {}", response.extract_json().get().serialize().c_str());
         if (response.status_code() == web::http::status_codes::OK) {
             SPDLOG_INFO("publishConfig success {}", response.status_code());
             return true;
@@ -478,8 +481,14 @@ bool apollo_openapi_base::createNewNamespace(const std::string &address,
         auto requestClient = web::http::client::http_client(base_url);
         web::http::http_request request(web::http::methods::POST);
         auto headers = getTokenHeader(token_);
+
+        std::string ns;
+        if (ends_with(namespacename, std::string(".yaml"))) {
+            int suffix_len = 5;
+            ns = namespacename.substr(0, namespacename.length() - suffix_len);
+        }
         web::json::value data;
-        data[U("name")] = web::json::value::string(namespacename);
+        data[U("name")] = web::json::value::string(ns);
         data[U("appId")] = web::json::value::string(appid);
         data[U("format")] = web::json::value::string(format);
         data[U("isPublic")] = web::json::value::boolean(isPublic);
@@ -494,6 +503,7 @@ bool apollo_openapi_base::createNewNamespace(const std::string &address,
             return true;
         } else {
             SPDLOG_ERROR("create ns error {}", response.status_code());
+            //TODO. if ns exist, should print
             return false;
         }
     } catch (std::exception &e) {
@@ -541,6 +551,7 @@ bool apollo_openapi_base::createNewConfig(const std::string &address,
             return true;
         } else {
             SPDLOG_ERROR("create new config: {} error {}", namespacename, response.status_code());
+            //TODO. if config exist, print it.
             return false;
         }
 
