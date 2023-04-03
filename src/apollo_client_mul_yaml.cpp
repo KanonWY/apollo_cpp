@@ -28,14 +28,18 @@ void apollo_mul_yaml_client::init(const std::string &address,
 
 YAML::Node apollo_mul_yaml_client::getNsNameConfigNode(const std::string &ns_name)
 {
-    //TODO lock?
-    return ns_yaml_config_map_[ns_name];
+    YAML::Node res_node;
+    {
+        std::lock_guard<std::mutex> lock(ns_yaml_config_mt_);
+        res_node = ns_yaml_config_map_[ns_name];
+    }
+    return res_node;
 }
 
 void apollo_mul_yaml_client::updateYamlConfigMap()
 {
     if (!start_) {
-        SPDLOG_ERROR("updateYamlConfigMap exec before init!");
+        SPDLOG_ERROR("update config error. not start");
         return;
     }
     {
@@ -156,5 +160,14 @@ void apollo_mul_yaml_client::setCallback(Callback &&cb)
 void apollo_mul_yaml_client::setCallback(const Callback &cb)
 {
     call_back_ = cb;
+}
+apollo_mul_yaml_client::~apollo_mul_yaml_client()
+{
+    if (start_) {
+        start_ = false;
+    }
+    if (loop_thread_.joinable()) {
+        loop_thread_.join();
+    }
 }
 } // namespace apollo_client

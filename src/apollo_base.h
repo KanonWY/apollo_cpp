@@ -11,6 +11,30 @@
 namespace apollo_client
 {
 
+template <typename charT>
+inline bool starts_with(const std::basic_string<charT> &big, const std::basic_string<charT> &small)
+{
+    if (&big == &small)
+        return true;
+    const typename std::basic_string<charT>::size_type big_size = big.size();
+    const typename std::basic_string<charT>::size_type small_size = small.size();
+    const bool valid_ = (big_size >= small_size);
+    const bool starts_with_ = (big.compare(0, small_size, small) == 0);
+    return valid_ and starts_with_;
+}
+
+template <typename charT>
+inline bool ends_with(const std::basic_string<charT> &big, const std::basic_string<charT> &small)
+{
+    if (&big == &small)
+        return true;
+    const typename std::basic_string<charT>::size_type big_size = big.size();
+    const typename std::basic_string<charT>::size_type small_size = small.size();
+    const bool valid_ = (big_size >= small_size);
+    const bool ends_with_ = (big.compare(big_size - small_size, small_size, small) == 0);
+    return valid_ and ends_with_;
+}
+
 enum RE_TYPE
 {
     YAML_OBJECT,
@@ -95,8 +119,12 @@ public:
     {
         YAML::Node node;
         //TODO: check the namespace_name end with .yaml
+        if (!ends_with(namespace_name, std::string(".yaml"))) {
+            SPDLOG_ERROR("namespace_name error, it must be .yaml!");
+            return node;
+        }
         if ((config_server_url.size() + appid_name.size() + namespace_name.size() + cluster_name.size()) > 266) {
-            SPDLOG_ERROR("url large than 200");
+            SPDLOG_ERROR("URL length error!");
             return node;
         }
         std::string base_url;
@@ -119,7 +147,7 @@ public:
                 if (node["content"]) {
                     return node["content"];
                 }
-                SPDLOG_ERROR("config content not exist!");
+                SPDLOG_ERROR("config content not exist, maybe not yaml config type!");
             }
         } catch (std::exception &e) {
             SPDLOG_ERROR("Exception: {}", e.what());
@@ -143,6 +171,10 @@ public:
                                                                                         const std::string &cluster_name)
     {
         std::string res_value;
+        if (!ends_with(namespace_name, std::string(".yaml"))) {
+            SPDLOG_ERROR("namespace_name error, it must be .yaml!");
+            return res_value;
+        }
         if ((config_server_url.size() + appid_name.size() + namespace_name.size() + cluster_name.size()) > 266) {
             SPDLOG_ERROR("url large than 200");
             return res_value;
@@ -167,6 +199,7 @@ public:
                 if (node["content"]) {
                     res_value = node["content"].as<std::string>();
                 }
+                SPDLOG_ERROR("config content not exist, maybe not yaml config type!");
             }
         } catch (std::exception &e) {
             SPDLOG_ERROR("Exception: {}", e.what());

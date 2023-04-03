@@ -78,6 +78,8 @@ public:
 
     void setCallback(const Callback &cb);
 
+    ~apollo_mul_yaml_client() override;
+
 private:
     /**
      * @brief inner update the config map.
