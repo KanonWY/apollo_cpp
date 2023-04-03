@@ -134,6 +134,7 @@ web::http::status_code apollo_mul_yaml_client::checkNotify()
         return response.status_code();
     } catch (std::exception &e) {
         SPDLOG_ERROR("Exception: {} ", e.what());
+        return web::http::status_codes::BadRequest;
     }
 }
 

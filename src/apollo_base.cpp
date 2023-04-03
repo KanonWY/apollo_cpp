@@ -203,7 +203,7 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInnerByYAML(con
 
 // openapi which use token to modify server's config.
 
-std::optional<std::string> apollo_openapi_base::getConifgNoProperties(const std::string &address,
+std::optional<std::string> apollo_openapi_base::getConfigNoProperties(const std::string &address,
                                                                       const std::string &env,
                                                                       const std::string &appid,
                                                                       const std::string &clustername,

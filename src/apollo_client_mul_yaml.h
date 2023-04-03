@@ -15,10 +15,18 @@ class Node;
 namespace apollo_client
 {
 
+/**
+ * @brief  a class for one appid and multi namespace.
+ */
+
 class apollo_mul_yaml_client : public apollo_base
 {
 public:
     using Callback = std::function<void()>;
+
+    /**
+     * @brief environment base struct
+     */
     struct env_base
     {
         std::string address_{"http://localhost:8080"};
@@ -28,6 +36,15 @@ public:
     };
 
 public:
+    /**
+     * @brief init apollo_mul_yaml_client.
+     * @param address
+     * @param appid
+     * @param clusterName
+     * @param nsvec a vector to store namespace string
+     * @param c
+     * @param triggle_call_back
+     */
     void init(
         const std::string &address,
         const std::string &appid,
@@ -36,25 +53,51 @@ public:
         const Callback &c = []() {},
         bool triggle_call_back = false);
 
+    /**
+     * @brief get a yaml node config by namespace name.
+     * @param ns_name
+     * @return
+     */
     YAML::Node getNsNameConfigNode(const std::string &ns_name);
 
-    //call back
-
+    /**
+     * @brief turn on the callback
+     */
     void turnonCallback();
 
+    /**
+     * @brief turn off the callback
+     */
     void turnoffCallback();
 
+    /**
+     * @brief set a callback.
+     * @param cb
+     */
     void setCallback(Callback &&cb);
 
     void setCallback(const Callback &cb);
 
 private:
+    /**
+     * @brief inner update the config map.
+     */
     void updateYamlConfigMap();
 
+    /**
+     * @brief async update notifyId.
+     */
     void submitNotificationsAsync();
 
+    /**
+     * @brief thread loop function.
+     */
     void submitNotificationFunc();
 
+    /**
+     * @brief check the notifyId.
+     * @return
+     */
     web::http::status_code checkNotify();
 
 private:

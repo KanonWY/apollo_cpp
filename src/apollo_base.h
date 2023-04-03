@@ -21,29 +21,72 @@ enum RE_TYPE
 class apollo_base
 {
 public:
+    /**
+     * @brief get config from db.(not config server buffer)
+     * @param config_server_url
+     * @param appid_name
+     * @param namespace_name
+     * @param cluster_name
+     * @return
+     */
     std::map<std::string, std::string> getConfigNoBufferInner(const std::string &config_server_url,
                                                               const std::string &appid_name,
                                                               const std::string &namespace_name,
                                                               const std::string &cluster_name);
 
+    /**
+     * @brief get config from db.(not config server buffer)
+     * @param config_server_url
+     * @param appid_name
+     * @param namespace_name
+     * @param cluster_name
+     * @param output
+     * @return
+     */
     bool getConfigNoBufferInner(const std::string &config_server_url,
                                 const std::string &appid_name,
                                 const std::string &namespace_name,
                                 const std::string &cluster_name,
                                 std::map<std::string, std::string> &output);
 
+    /**
+     * @brief get config from db by key.
+     * @param config_server_url
+     * @param appid_name
+     * @param namespace_name
+     * @param cluster_name
+     * @param key
+     * @return
+     */
     std::string getConfigNoBufferByKeyInner(const std::string &config_server_url,
                                             const std::string &appid_name,
                                             const std::string &namespace_name,
                                             const std::string &cluster_name,
                                             const std::string &key);
 
+    /**
+     * @brief  get config from db, return yaml first level key:value string.
+     * @param config_server_url
+     * @param appid_name
+     * @param namespace_name
+     * @param cluster_name
+     * @return
+     */
     std::map<std::string, std::string> getConfigNoBufferInnerByYAML(const std::string &config_server_url,
                                                                     const std::string &appid_name,
                                                                     const std::string &namespace_name,
                                                                     const std::string &cluster_name);
 
 public:
+    /**
+     * @brief get yaml node for db.
+     * @tparam T value template.
+     * @param config_server_url
+     * @param appid_name
+     * @param namespace_name
+     * @param cluster_name
+     * @return
+     */
     template <RE_TYPE T>
     typename std::enable_if<T == RE_TYPE::YAML_OBJECT, YAML::Node>::type getYamlConfig(const std::string &config_server_url,
                                                                                        const std::string &appid_name,
@@ -84,6 +127,15 @@ public:
         return node;
     }
 
+    /**
+     * @brief get config string from db.
+     * @tparam T
+     * @param config_server_url
+     * @param appid_name
+     * @param namespace_name
+     * @param cluster_name
+     * @return
+     */
     template <RE_TYPE T>
     typename std::enable_if<T == RE_TYPE::YAML_STRING, std::string>::type getYamlConfig(const std::string &config_server_url,
                                                                                         const std::string &appid_name,
@@ -134,86 +186,153 @@ public:
 
     virtual ~apollo_base() = default;
 };
-//This is can change the server config
+
+/**
+ * @brief basic http interface
+ */
 
 class apollo_openapi_base
 {
 public:
-    std::set<std::map<std::string, std::string>> getAllAppInfo(const std::string &appIds);
-
-    // 1.get app env
-    // URL : http://{portal_address}/openapi/v1/apps/{appId}/envclusters
-    // Method : GET
+    /**
+     * @brief get app env
+     *        URL : http://{portal_address}/openapi/v1/apps/{appId}/envclusters
+     *        Method : GET
+     * @param address
+     * @param appid
+     * @return
+     */
     std::string getAppenvInfo(const std::string &address,
                               const std::string &appid);
 
-    // 2.get app detail info
-    // URL : http://{portal_address}/openapi/v1/apps
-    // Method : GET
+    /**
+     * @brief get app detail info
+     *        URL : http://{portal_address}/openapi/v1/apps
+     *        Method : GET
+     * @param address
+     * @return
+     */
     std::string getAppInfo(const std::string &address);
 
-    // 3. get cluster info (include cluster name, data change time)
-    // URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}
-    // METHOD： GET
+    /**
+     * @brief get cluster info (include cluster name, data change time)
+     *        URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}
+     *        METHOD： GET
+     * @param address
+     * @param envinfo
+     * @param appid
+     * @param clustername
+     * @return
+     */
     std::string getClusterInfo(const std::string &address,
                                const std::string &envinfo,
                                const std::string &appid,
                                const std::string &clustername);
 
-    // 4. create cluster
-    // URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters
-    // Method: POST
+    /**
+     * @brief create cluster
+     *        URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters
+     *        Method: POST
+     * @param address
+     * @param envinfo
+     * @param appid
+     * @return
+     */
     std::string createCluster(const std::string &address,
                               const std::string &envinfo,
                               const std::string &appid);
 
-    // 5. get all  namespace info in a cluster.
-    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces
-    // Method: GET
+    /**
+     * @brief get all  namespace info in a cluster.
+     *        URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces
+     *        Method: GET
+     * @param address
+     * @param env
+     * @param appid
+     * @param clustername
+     * @return
+     */
     std::string getNamespaceinfoInCluster(const std::string &address,
                                           const std::string &env,
                                           const std::string &appid,
                                           const std::string &clustername);
 
-    // 6. get a namespace info
-    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}
-    // Method: GET
+    /**
+     * @brief get a namespace info
+     *        URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}
+     *        Method: GET
+     * @param address
+     * @param env
+     * @param appid
+     * @param clustername
+     * @param namespacesname
+     * @return
+     */
     std::string getSpecialNamespaceInfo(const std::string &address,
                                         const std::string &env,
                                         const std::string &appid,
                                         const std::string &clustername,
                                         const std::string &namespacesname);
 
-    // 7. create a new namespace.
-    // URL: http://{portal_address}/openapi/v1/apps/{appId}/appnamespaces
-    // POST
+    /**
+     * @brief create a new namespace
+     *        URL: http://{portal_address}/openapi/v1/apps/{appId}/appnamespaces
+     *        Method: POST
+     * @param address
+     * @param appid
+     * @return
+     */
     std::string createNewNamespace(const std::string &address,
                                    const std::string &appid);
 
-    // 8. locker interface TODO
-
-    //9. get config interface
-    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}
-    // Method: GET
-    std::optional<std::string> getConifgNoProperties(const std::string &address,
+    /**
+     * @brief get config interface
+     *        URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}
+     *        Method: GET
+     * @param address
+     * @param env
+     * @param appid
+     * @param clustername
+     * @param namespacename
+     * @return
+     */
+    std::optional<std::string> getConfigNoProperties(const std::string &address,
                                                      const std::string &env,
                                                      const std::string &appid,
                                                      const std::string &clustername,
                                                      const std::string &namespacename);
 
-    // 10. create new config
-    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items
-    // Method: POST
+    /**
+     * @brief create new config
+     * @param address
+     * @param env
+     * @param appid
+     * @param clustername
+     * @param namespacename
+     * @return
+     */
     std::string createNewconfig(const std::string &address,
                                 const std::string &env,
                                 const std::string &appid,
                                 const std::string &clustername,
                                 const std::string &namespacename);
 
-    // 11. modify config
-    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}
-    // Method: GET
-    // DESC: if key == "content", the config file is not properties.
+    /**
+     * @brief  modify config
+     *         URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items
+     *         Method: POST
+     * @param address
+     * @param env
+     * @param appid
+     * @param clustername
+     * @param namespacename
+     * @param conifgstr
+     * @param modifyuserid
+     * @param createIfnotExists
+     * @param comment
+     * @param createuerid
+     * @return
+     */
     bool modifyConfigNoProperties(const std::string &address,
                                   const std::string &env,
                                   const std::string &appid,
@@ -225,9 +344,18 @@ public:
                                   const std::string &comment,
                                   const std::string &createuerid);
 
-    // 12. delete config
-    // URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}?
-    // Method: DELETE
+    /**
+     * @brief  delete config,
+     *         URL:  http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}?
+     *         Method: DELETE
+     * @param address
+     * @param env
+     * @param appid
+     * @param clustername
+     * @param namespacename
+     * @param deleteuserid
+     * @return
+     */
     bool deleteConfig(const std::string &address,
                       const std::string &env,
                       const std::string &appid,
@@ -235,9 +363,18 @@ public:
                       const std::string &namespacename,
                       const std::string &deleteuserid);
 
-    // 13. publish config
-    // URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/releases
-    // Method： POST
+    /**
+     * @brief publish config: Method： POST
+     * @param address  URL: http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/releases
+     * @param env
+     * @param appid
+     * @param clusterName
+     * @param namespacename
+     * @param releaseTitle
+     * @param releasedBy
+     * @param releaseComment
+     * @return
+     */
     bool publishConfig(const std::string &address,
                        const std::string &env,
                        const std::string &appid,
@@ -247,10 +384,12 @@ public:
                        const std::string &releasedBy,
                        const std::string &releaseComment);
 
-    // 14 rollback the config
-    // URL:  http://{portal_address}/openapi/v1/envs/{env}/releases/{releaseId}/rollback
-    // Method： PUT
-    // releaseid: rollback to which version.
+    /**
+     * @brief rollback the config, URL:  http://{portal_address}/openapi/v1/envs/{env}/releases/{releaseId}/rollback
+     * @param address
+     * @param env
+     * @param releaseid rollback to which version.
+     */
     void rollbackConfig(const std::string &address,
                         const std::string &env,
                         const std::string &releaseid);

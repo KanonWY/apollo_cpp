@@ -13,6 +13,10 @@
 #include "apollo_base.h"
 #include <spdlog/spdlog.h>
 
+/**
+ * @brief function for debug.
+ * @param property
+ */
 void DumpProperties(const std::map<std::string, std::string> &property)
 {
     for (const auto &item : property) {
@@ -24,6 +28,9 @@ void DumpProperties(const std::map<std::string, std::string> &property)
 namespace apollo_client
 {
 
+/**
+ * @brief base apollo environment base, one appid -> one namespace.
+ */
 struct apolloEnv
 {
     std::string address_ = "http://localhost:8080";
@@ -32,7 +39,9 @@ struct apolloEnv
     std::string namespace_name_ = "codereviwNS";
 };
 
-// apollo客户端测试类
+/**
+ * @brief  for test.
+ */
 class ApolloClient : public apollo_base
 {
 public:

@@ -13,10 +13,18 @@
 
 namespace apollo_client
 {
+
+/**
+ * @brief apollo client: control multi namespace
+ *        configType: properties.
+ */
 class apollo_mulns_client : public apollo_base
 {
 public:
     using Callback = std::function<void()>;
+    /**
+     * @brief base environment
+     */
     struct env_base
     {
         std::string address_{"http://localhost:8080"};
@@ -26,6 +34,15 @@ public:
     };
 
 public:
+    /**
+     * @brief init client and start loop thread.
+     * @param address
+     * @param appid
+     * @param clusterName
+     * @param nsvec
+     * @param c
+     * @param triggle_call_back
+     */
     void init(
         const std::string &address,
         const std::string &appid,
@@ -35,30 +52,58 @@ public:
         bool triggle_call_back = false);
 
 private:
+    /**
+     * @brief update Config by namespace name.
+     * @param ns_name
+     */
     void updateConfigMapByNamespace(const std::string &ns_name);
 
+    /**
+     * @brief update all namespace's config.
+     */
     void updateConfigMap();
 
+    /**
+     * @brief async update notifyId.
+     */
     void submitNotificationsAsync();
 
+    /**
+     * @brief thread loop function.
+     */
     void submitNotificationFunc();
 
+    /**
+     * @brief check notify update.
+     * @return
+     */
     web::http::status_code checkNotify();
 
-
-
 public:
-    //call back setting
-    void setCallback(const Callback& cb);
+    /**
+     * @brief set callback.
+     * @param cb
+     */
+    void setCallback(const Callback &cb);
 
-    void setCallback(Callback&& cb);
+    void setCallback(Callback &&cb);
 
+    /**
+     * @brief turn on call back.
+     */
     void turnonCallback();
-    
+
+    /**
+     * @brief turn off call back.
+     */
     void turnoffCallback();
 
-    std::map<std::string, std::string> getConfigureByNs(const std::string& ns);
-
+    /**
+     * @brief get config by namespace.(maybe order data)
+     * @param ns
+     * @return
+     */
+    std::map<std::string, std::string> getConfigureByNs(const std::string &ns);
 
 private:
     env_base env_;

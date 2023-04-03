@@ -25,26 +25,6 @@ void apollo_sgns_client::init(
     submitNotificationsAsync();
 }
 
-//void apollo_sgns_client::init(const std::string &address,
-//                              const std::string &appid,
-//                              const std::string &clusterName,
-//                              const std::string &namespaceName,
-//                              apollo_sgns_client::Callback &&cb,
-//                              bool triggle_call_back)
-//{
-//    env_.appid_name_ = appid;
-//    env_.address_ = address;
-//    env_.namespace_name_ = namespaceName;
-//    env_.cluster_name_ = clusterName;
-//    std::get<0>(nsNid_) = namespaceName;
-//    start_ = true;
-//    b_call_back = triggle_call_back;
-//    call_back_ = std::move(cb);
-//    updateConfigMap();
-//    dumpConfig();
-//    submitNotificationsAsync();
-//}
-
 std::string apollo_sgns_client::getConfigNoBufferByKey(const std::string &key)
 {
     if (!start_) {
