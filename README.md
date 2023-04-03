@@ -10,6 +10,7 @@ sudo apt-get install libcpprest-dev
 sudo apt-get install libspdlog-dev
 sudo apt-get install libyaml-cpp0.6
 sudo apt-get install libyaml-cpp-dev
+# 如果还要编译proxy，还需要安装pb和asio
 ```
 
 - 编译（默认编译sample)
