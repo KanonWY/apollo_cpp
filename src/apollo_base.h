@@ -320,8 +320,13 @@ public:
      * @param appid
      * @return
      */
-    std::string createNewNamespace(const std::string &address,
-                                   const std::string &appid);
+    bool createNewNamespace(const std::string &address,
+                            const std::string &appid,
+                            const std::string &namespacename,
+                            const std::string &format,
+                            const std::string &dataChangeCreatedBy,
+                            bool iPublic,
+                            const std::string &comment);
 
     /**
      * @brief get config interface
@@ -349,11 +354,15 @@ public:
      * @param namespacename
      * @return
      */
-    std::string createNewConfig(const std::string &address,
-                                const std::string &env,
-                                const std::string &appid,
-                                const std::string &clustername,
-                                const std::string &namespacename);
+    bool createNewConfig(const std::string &address,
+                         const std::string &env,
+                         const std::string &appid,
+                         const std::string &clustername,
+                         const std::string &namespacename,
+                         const std::string &key,
+                         const std::string &value,
+                         const std::string &dataChangeCreatedBy,
+                         const std::string &comment);
 
     /**
      * @brief  modify config

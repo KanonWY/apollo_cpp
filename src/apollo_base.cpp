@@ -287,7 +287,8 @@ bool apollo_openapi_base::modifyConfigNoProperties(const std::string &address,
         SPDLOG_INFO("URL = {}", base_url.c_str());
         auto requestClient = web::http::client::http_client(base_url);
 
-        //TODO add request param.
+        web::http::uri_builder builder;
+        builder.append_query(U("createIfNotExists"), createIfnotExists);
 
         // create header, add_token
         auto headers = getTokenHeader(token_);
@@ -296,11 +297,10 @@ bool apollo_openapi_base::modifyConfigNoProperties(const std::string &address,
         data[U("key")] = web::json::value::string("content");
         data[U("value")] = web::json::value::string(conifgstr);
         data[U("dataChangeLastModifiedBy")] = web::json::value::string(modifyuserid);
-        // data[U("comment")] = web::json::value::string(comment);
-        // data[U("dataChangeCreatedBy")] = web::json::value::string(createuerid);
 
         web::http::http_request request(web::http::methods::PUT);
         request.headers() = headers;
+        request.set_request_uri(builder.to_string());
         request.set_body(data);
         auto response = requestClient.request(request).get();
         if (response.status_code() == web::http::status_codes::OK) {
@@ -407,7 +407,6 @@ bool apollo_openapi_base::publishConfig(const std::string &address,
         request.headers() = headers;
         request.set_body(data);
         auto response = requestClient.request(request).get();
-        SPDLOG_INFO("content = {}", response.extract_json().get().serialize().c_str());
         if (response.status_code() == web::http::status_codes::OK) {
             SPDLOG_INFO("publishConfig success {}", response.status_code());
             return true;
@@ -458,15 +457,97 @@ std::string apollo_openapi_base::getSpecialNamespaceInfo(const std::string &addr
     return {};
 }
 
-std::string apollo_openapi_base::createNewNamespace(const std::string &address, const std::string &appid)
+bool apollo_openapi_base::createNewNamespace(const std::string &address,
+                                             const std::string &appid,
+                                             const std::string &namespacename,
+                                             const std::string &format,
+                                             const std::string &dataChangeCreatedBy,
+                                             bool isPublic,
+                                             const std::string &comment)
 {
-    
-    return {};
+    std::string base_url;
+    base_url.reserve(256);
+    {
+        char *url = new char[256];
+        sprintf(url, "http://%s/openapi/v1/apps/%s/appnamespaces",
+                address.c_str(), appid.c_str());
+        base_url = url;
+        delete[] url;
+    }
+    try {
+        auto requestClient = web::http::client::http_client(base_url);
+        web::http::http_request request(web::http::methods::POST);
+        auto headers = getTokenHeader(token_);
+        web::json::value data;
+        data[U("name")] = web::json::value::string(namespacename);
+        data[U("appId")] = web::json::value::string(appid);
+        data[U("format")] = web::json::value::string(format);
+        data[U("isPublic")] = web::json::value::boolean(isPublic);
+        data[U("comment")] = web::json::value::string(comment);
+        data[U("dataChangeCreatedBy")] = web::json::value::string(dataChangeCreatedBy);
+        request.headers() = headers;
+        request.set_body(data);
+        auto response = requestClient.request(request).get();
+        SPDLOG_INFO("content = {}", response.extract_json().get().serialize().c_str());
+        if (response.status_code() == web::http::status_codes::OK) {
+            SPDLOG_INFO("create ns {}.{} success {}", namespacename, format, response.status_code());
+            return true;
+        } else {
+            SPDLOG_ERROR("create ns error {}", response.status_code());
+            return false;
+        }
+    } catch (std::exception &e) {
+        SPDLOG_ERROR("Exception: {}", e.what());
+    }
+    return false;
 }
 
-std::string apollo_openapi_base::createNewConfig(const std::string &address, const std::string &env, const std::string &appid, const std::string &clustername, const std::string &namespacename)
+bool apollo_openapi_base::createNewConfig(const std::string &address,
+                                          const std::string &env,
+                                          const std::string &appid,
+                                          const std::string &clustername,
+                                          const std::string &namespacename,
+                                          const std::string &key,
+                                          const std::string &value,
+                                          const std::string &dataChangeCreatedBy,
+                                          const std::string &comment)
 {
-    return {};
+    std::string base_url;
+    base_url.reserve(256);
+    {
+        char *url = new char[256];
+        sprintf(url, "http://%s/openapi/v1/envs/%s/apps/%s/clusters/%s/namespaces/%s/items",
+                address.c_str(), env.c_str(), appid.c_str(), clustername.c_str(), namespacename.c_str());
+        base_url = url;
+        delete[] url;
+    }
+    try {
+        SPDLOG_INFO("URL = {}", base_url);
+        auto requestClient = web::http::client::http_client(base_url);
+        web::http::http_request request(web::http::methods::POST);
+        // build request.
+        auto headers = getTokenHeader(token_);
+        web::json::value data;
+        data[U("key")] = web::json::value::string(key);
+        data[U("value")] = web::json::value::string(value);
+        data[U("comment")] = web::json::value::string(comment);
+        data[U("dataChangeCreatedBy")] = web::json::value::string(dataChangeCreatedBy);
+        request.headers() = headers;
+        request.set_body(data);
+        auto response = requestClient.request(request).get();
+        SPDLOG_INFO("content = {}", response.extract_json().get().serialize().c_str());
+        if (response.status_code() == web::http::status_codes::OK) {
+            SPDLOG_INFO("ceate config {}, success {}", namespacename, response.status_code());
+            return true;
+        } else {
+            SPDLOG_ERROR("create new config: {} error {}", namespacename, response.status_code());
+            return false;
+        }
+
+    } catch (std::exception &e) {
+        SPDLOG_ERROR("Exception: {}", e.what());
+    }
+    return false;
 }
 
 void apollo_openapi_base::rollbackConfig(const std::string &address, const std::string &env, const std::string &releaseid)
