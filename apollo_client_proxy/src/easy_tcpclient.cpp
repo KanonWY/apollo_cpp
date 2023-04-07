@@ -141,19 +141,19 @@ bool CTcpClient::SendRequest(const std::string &request_)
             m_socket->read_some(asio::buffer(resp_buffer));
         }
 
-//        std::vector<char> packaged_request = pack_write(request_);
-//
-//        while (written != packaged_request.size()) {
-//            auto bytes_written = m_socket->write_some(
-//                asio::buffer(packaged_request.data() + written, packaged_request.size() - written));
-//            written += bytes_written;
-//        }
+        //        std::vector<char> packaged_request = pack_write(request_);
+        //
+        //        while (written != packaged_request.size()) {
+        //            auto bytes_written = m_socket->write_some(
+        //                asio::buffer(packaged_request.data() + written, packaged_request.size() - written));
+        //            written += bytes_written;
+        //        }
         // send payload to server
-         while (written != request_.size()) {
-             auto bytes_written = m_socket->write_some(
-                 asio::buffer(request_.c_str() + written, request_.size() - written));
-             written += bytes_written;
-         }
+        while (written != request_.size()) {
+            auto bytes_written = m_socket->write_some(
+                asio::buffer(request_.c_str() + written, request_.size() - written));
+            written += bytes_written;
+        }
     } catch (std::exception &e) {
         std::cerr << "CTcpClient::SendRequest: Failed to send request: " << e.what()
                   << "\n";
@@ -343,7 +343,7 @@ void CTcpClient::ExecuteCallback(AsyncCallbackT callback_,
 
 std::vector<char> CTcpClient::pack_write(const std::string &request)
 {
-    std::cout << "package_write" << std::endl;
+    // std::cout << "package_write" << std::endl;
     STcpHeader tcp_header;
     const size_t psize = request.size();
     tcp_header.psize_n = htonl(static_cast<uint32_t>(psize));

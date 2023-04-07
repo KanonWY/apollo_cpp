@@ -21,7 +21,7 @@ void apollo_mul_yaml_client::init(const std::string &address,
     b_call_back_ = triggle_call_back;
     start_ = true;
     // first time to update the ConfigMap
-    updateYamlConfigMap();
+    // updateYamlConfigMap();
     // start async thread to check.
     submitNotificationsAsync();
 }
@@ -71,13 +71,21 @@ void apollo_mul_yaml_client::submitNotificationFunc()
     while (start_) {
         auto res_status_code = checkNotify();
         if (res_status_code == web::http::status_codes::NotModified) {
+            reconnect_times_ = 5;
             continue;
         } else if (res_status_code == web::http::status_codes::OK) {
             //some ns have changed, so need to update all ns config.
+            reconnect_times_ = 5;
             updateYamlConfigMap();
         } else {
             SPDLOG_ERROR("checkNotify case by other error, errorCode = {}", res_status_code);
-            break;
+            if (reconnect_times_ <= 0) {
+                break;
+            } else {
+                continue;
+                SPDLOG_INFO("start to reconnect! times {},....", reconnect_times_);
+                reconnect_times_--;
+            }
         }
     }
 }
@@ -135,8 +143,9 @@ web::http::status_code apollo_mul_yaml_client::checkNotify()
                 }
                 ns_notifyId_map_[ns_name] = notify_id;
             }
+            SPDLOG_INFO("config modify, will to get new config!");
         } else if (response.status_code() == web::http::status_codes::NotModified) {
-            SPDLOG_INFO("NotModified!");
+            SPDLOG_INFO("all config  notModified!");
         } else {
             SPDLOG_ERROR("checkNotify error: {} \n url = {} {}", response.status_code(), base_url, builder.to_string().c_str());
         }

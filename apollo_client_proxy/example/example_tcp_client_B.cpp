@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include "basemessage.h"
+#include "spdlog/spdlog.h"
 
 void request_callback(const std::string &data_, bool successful_)
 {
@@ -21,34 +22,29 @@ void request_callback(const std::string &data_, bool successful_)
     auto appid = responseContent.appid();
     std::map<std::string, std::string> kv;
     std::cout << "size map = " << responseContent.namespace_config_map().size() << std::endl;
-    for(const auto& item: responseContent.namespace_config_map())
-    {
+    for (const auto &item : responseContent.namespace_config_map()) {
         kv.insert(item);
     }
 
     std::cout << "version = " << version << std::endl;
     std::cout << "appid = " << appid << std::endl;
-    for(const auto& item :kv)
-    {
+    for (const auto &item : kv) {
         std::cout << "key = " << item.first.c_str() << std::endl;
         //        std::cout << "value = " << item.second.c_str() << std::endl;
     }
 }
 
-EASY_TCP::ResponseContent Unpack(const std::string& responseStr)
+EASY_TCP::ResponseContent Unpack(const std::string &responseStr)
 {
     EASY_TCP::MsgContent msgContent;
     msgContent.ParseFromString(responseStr);
     auto version = msgContent.version();
     auto cmd = msgContent.version();
     auto content = msgContent.content();
-    std::cout << "version = " << version << std::endl;
     EASY_TCP::ResponseContent responseContent;
     responseContent.ParseFromString(content);
     return responseContent;
 }
-
-
 
 std::string packSendMsg(const std::string &token, const std::string &appid, const std::vector<std::string> &nsv)
 {
@@ -74,7 +70,6 @@ std::string packSendMsg(const std::string &token, const std::string &appid, cons
     return inner_str;
 }
 
-
 int main_async_send()
 {
     easy_tcp::CTcpClient client;
@@ -83,7 +78,7 @@ int main_async_send()
     std::string request("lplpl");
 
     std::string res;
-    res = packSendMsg("","SampleApp",{"test_yaml.yaml"});
+    res = packSendMsg("", "SampleApp", {"test_yaml.yaml"});
     client.ExecuteRequestAsync(res, 200, std::bind(request_callback, std::placeholders::_1, std::placeholders::_2));
     std::cout << "res = " << res.size() << std::endl;
 
@@ -98,22 +93,18 @@ int main()
     // create a client
     easy_tcp::CTcpClient client;
     client.Create("localhost", 12345);
-    while(true) {
+    while (true) {
         std::string resquest, response;
         // create request.
         resquest = packSendMsg("", "SampleApp", {"test_yaml22.yaml"});
         auto size = client.ExecuteRequest(resquest, -1, response);
         if (size > 0) {
-            std::cout << "size = " << size << std::endl;
             auto res = Unpack(response);
-            std::cout << "appid = " << res.appid() << std::endl;
             auto m = res.namespace_config_map();
             for (auto it : m) {
-                std::cout << "ns = " << it.first << std::endl;
-                std::cout << "node_string = \n" << it.second << std::endl;
+                SPDLOG_INFO("\n====================【{}】==========================\n {} \n==================================================================", it.first, it.second);
             }
-        }
-        else{
+        } else {
             std::cout << "error " << std::endl;
         }
         std::this_thread::sleep_for(std::chrono::seconds(10));

@@ -14,7 +14,6 @@ apollo_proxy_server::apollo_proxy_server()
 
 int apollo_proxy_server::defaultRequestCallback(const std::string &request, std::string &response, CTcpServer *sp)
 {
-    std::cout << "request" << std::endl;
     //get map
     auto *p = dynamic_cast<apollo_proxy_server *>(sp);
     auto data = p->getDataMap();
@@ -22,7 +21,6 @@ int apollo_proxy_server::defaultRequestCallback(const std::string &request, std:
     // parse protobuf
     EASY_TCP::MsgContent content;
     content.ParseFromString(request);
-    std::cout << "content version = " << content.version() << std::endl;
     auto version = content.version();
     auto cmd = content.cmd();
     auto inner_content_str = content.content();
@@ -37,20 +35,21 @@ int apollo_proxy_server::defaultRequestCallback(const std::string &request, std:
     for (int i = 0; i < requestContent.namespace_vec_size(); ++i) {
         ns_v.push_back(requestContent.namespace_vec(i));
     }
-    std::cout << "appid = " << appid.c_str() << std::endl;
-    for (const auto &item : ns_v) {
-        std::cout << "ns = " << item.c_str() << std::endl;
-    }
+    // std::cout << "appid = " << appid.c_str() << std::endl;
+    // for (const auto &item : ns_v) {
+    //     std::cout << "ns = " << item.c_str() << std::endl;
+    // }
     std::map<std::string, std::string> returnMap;
     for (const auto &i : ns_v) {
         if (data[appid]) {
-            std::cout << "ns = " << i << std::endl;
+            // std::cout << "ns = " << i << std::endl;
             auto cl = data[appid];
             auto node = cl->getNsNameConfigNode(i);
             if (node) {
                 returnMap.insert({i, node.as<std::string>()});
             } else {
                 std::cout << "node no exsit" << std::endl;
+                SPDLOG_ERROR("{} not exist", appid);
             }
         }
     }
@@ -61,11 +60,10 @@ int apollo_proxy_server::defaultRequestCallback(const std::string &request, std:
     responseContent.set_ack(2200);
     responseContent.set_appid(appid);
     auto ma = responseContent.mutable_namespace_config_map();
-    for(const auto item : returnMap)
-    {
+    for (const auto item : returnMap) {
         ma->insert({item.first, item.second});
     }
-    std::cout << "map size = " << responseContent.namespace_config_map().size() << std::endl;
+    // std::cout << "map size = " << responseContent.namespace_config_map().size() << std::endl;
     std::string sendstr;
     responseContent.SerializeToString(&sendstr);
     EASY_TCP::MsgContent sendmsg;
@@ -74,15 +72,20 @@ int apollo_proxy_server::defaultRequestCallback(const std::string &request, std:
     sendmsg.set_content(sendstr.c_str());
     sendstr.clear();
     sendmsg.SerializeToString(&sendstr);
-
     response = sendstr;
-    std::cout << "response size = " << response.size() << std::endl;
+    // std::cout << "response size = " << response.size() << std::endl;
     return 0;
 }
 
 void apollo_proxy_server::defaultEventCallback(Server_Event event, const std::string &message, CTcpServer *sp)
 {
-    std::cout << "event" << std::endl;
+    if (event == Server_Event::server_event_connected) {
+        SPDLOG_INFO("server_event_connected");
+    } else if (event == Server_Event::server_event_disconnected) {
+        SPDLOG_INFO("server_event_disconnected");
+    } else {
+        SPDLOG_INFO("server_event_none");
+    }
 }
 
 void apollo_proxy_server::Init(const std::string &address, const std::string &cluster,

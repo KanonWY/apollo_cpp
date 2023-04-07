@@ -117,6 +117,7 @@ private:
     std::atomic<bool> start_{false};
     std::atomic<bool> b_call_back_{false};
     Callback call_back_;
+    inline static int reconnect_times_ = 5;
 };
 
 }; // namespace apollo_client

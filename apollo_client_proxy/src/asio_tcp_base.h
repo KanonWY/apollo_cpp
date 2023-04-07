@@ -112,7 +112,7 @@ private:
 
     std::vector<char> pack_write(const std::string &response)
     {
-        std::cout << "package_write" << std::endl;
+        // std::cout << "package_write" << std::endl;
         STcpHeader tcp_header;
         const size_t psize = response.size();
         tcp_header.psize_n = htonl(static_cast<uint32_t>(psize));
