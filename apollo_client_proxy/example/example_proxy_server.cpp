@@ -64,10 +64,11 @@ int main()
 {
     //appid:{ns1, ns2, ns3};
     std::map<std::string, std::vector<std::string>> m;
-    m.insert({"SampleApp", {"test_yaml.yaml", "test_yaml22.yaml"}});
+    m.insert({"SampleApp", {"test_yaml.yaml", "test_yaml22.yaml", "public_config_1.yaml"}});
     easy_tcp::apollo_proxy_server server;
     // url：cluster
     server.Init("http://kanon2020.top:8080", "default", m);
+    server.StartMonitorService();
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));

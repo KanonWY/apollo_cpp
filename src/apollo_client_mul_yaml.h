@@ -86,6 +86,21 @@ public:
 
     ~apollo_mul_yaml_client() override;
 
+    bool getStatus()
+    {
+        return status_;
+    }
+
+    void falseStatus()
+    {
+        status_ = false;
+    }
+
+    void trueStatus()
+    {
+        status_ = true;
+    }
+
 private:
     /**
      * @brief inner update the config map.
@@ -118,6 +133,7 @@ private:
     std::atomic<bool> b_call_back_{false};
     Callback call_back_;
     inline static int reconnect_times_ = 5;
+    std::atomic<bool> status_{false};
 };
 
 }; // namespace apollo_client

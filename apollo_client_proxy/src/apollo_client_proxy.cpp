@@ -2,6 +2,7 @@
 #include "basemessage.h"
 
 #include <utility>
+#include <cpprest/http_listener.h>
 
 namespace easy_tcp
 {
@@ -103,6 +104,60 @@ void apollo_proxy_server::Init(const std::string &address, const std::string &cl
 std::map<std::string, apollo_proxy_server::apolloClientSptr> apollo_proxy_server::getDataMap()
 {
     return data_map_;
+}
+
+void apollo_proxy_server::StartMonitorService(short port)
+{
+    monitor_port_ = port;
+    monitor_server_ = std::thread(&apollo_proxy_server::monitor_function, this);
+}
+
+std::string apollo_proxy_server::generate_html()
+{
+    std::stringstream ss;
+    ss << "<html><head><title>Config Status</title></head>";
+    ss << "<body><table border='1'>  <caption><strong>config overview</strong></caption>";
+    ss << "<tr><th>app_id</th><th>namespace(config_name)</th><th>status(1:ok,0:err)</th></tr>";
+    for (const auto &item : data_map_) {
+        for (const auto ns : item.second.get()->getAllNamespaces()) {
+            ss << "<tr><td>" << item.first << "</td><td>" << ns << "</td><td>" << item.second.get()->getStatus() << "</td></tr>";
+        }
+        // ss << "<tr><td>" << item.first << "</td><td>" << item.second.get()->getAllNamespaces().front().c_str() << "</td></tr>";
+    }
+    ss << "</table><br><button onclick='location.reload();'>Refresh</button></body></html>";
+
+    return ss.str();
+}
+
+void apollo_proxy_server::handle_request(web::http::http_request request)
+{
+    if (request.method() == web::http::methods::GET && request.request_uri().path() == "/") {
+        // 设置返回内容和响应码
+        web::http::http_response response(web::http::status_codes::OK);
+        response.set_body(generate_html(), "text/html");
+        request.reply(response);
+
+    } else {
+        // 返回404响应
+        web::http::http_response response(web::http::status_codes::NotFound);
+        response.set_body("Not Found");
+        request.reply(response);
+    }
+}
+
+void apollo_proxy_server::monitor_function()
+{
+    std::string url("http://localhost:");
+    url.append(std::to_string(monitor_port_));
+    web::http::experimental::listener::http_listener listener(url);
+    // 设置处理请求的回调函数
+    listener.support([this](web::http::http_request request) {
+        this->handle_request(request);
+    });
+    listener.open().wait();
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+    }
 }
 
 } // namespace easy_tcp

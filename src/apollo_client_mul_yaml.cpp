@@ -21,7 +21,7 @@ void apollo_mul_yaml_client::init(const std::string &address,
     b_call_back_ = triggle_call_back;
     start_ = true;
     // first time to update the ConfigMap
-    // updateYamlConfigMap();
+    updateYamlConfigMap();
     // start async thread to check.
     submitNotificationsAsync();
 }
@@ -51,7 +51,13 @@ void apollo_mul_yaml_client::updateYamlConfigMap()
         // clear all content than get all new!
         ns_yaml_config_map_.clear();
         for (const auto &ns : env_.ns_map_) {
-            ns_yaml_config_map_.insert({ns, getYamlConfig<RE_TYPE::YAML_OBJECT>(env_.address_, env_.appid_name_, ns, env_.cluster_name_)});
+            auto node = getYamlConfig<RE_TYPE::YAML_OBJECT>(env_.address_, env_.appid_name_, ns, env_.cluster_name_);
+            if (node.IsNull()) {
+                SPDLOG_ERROR("{} config not exist", ns);
+            } else {
+                trueStatus();
+            }
+            ns_yaml_config_map_.emplace(ns, node);
         }
     }
     if (b_call_back_) {
@@ -72,7 +78,6 @@ void apollo_mul_yaml_client::submitNotificationFunc()
         auto res_status_code = checkNotify();
         if (res_status_code == web::http::status_codes::NotModified) {
             reconnect_times_ = 5;
-            continue;
         } else if (res_status_code == web::http::status_codes::OK) {
             //some ns have changed, so need to update all ns config.
             reconnect_times_ = 5;
@@ -82,12 +87,13 @@ void apollo_mul_yaml_client::submitNotificationFunc()
             if (reconnect_times_ <= 0) {
                 break;
             } else {
-                SPDLOG_INFO("start to reconnect! times {},....", reconnect_times_);
+                SPDLOG_ERROR("start to reconnect! times {},....", reconnect_times_);
                 reconnect_times_--;
-                continue;
             }
         }
     }
+    falseStatus();
+    SPDLOG_INFO("async notify thread will exit!");
 }
 
 web::http::status_code apollo_mul_yaml_client::checkNotify()
@@ -101,7 +107,7 @@ web::http::status_code apollo_mul_yaml_client::checkNotify()
     }
     try {
         web::http::client::http_client_config client_config;
-        client_config.set_timeout(std::chrono::seconds(61));
+        client_config.set_timeout(std::chrono::seconds(62));
         auto request_client = web::http::client::http_client(base_url, client_config);
 
         web::json::value notify_json_values;
@@ -114,14 +120,14 @@ web::http::status_code apollo_mul_yaml_client::checkNotify()
             json_array_index++;
         }
         auto ns_json_value = notify_json_values[U("param")];
-        //        SPDLOG_INFO("checkNotify local info: {}", ns_json_value.serialize().c_str());
+        // SPDLOG_INFO("checkNotify local info: {}", ns_json_value.serialize().c_str());
 
         web::http::uri_builder builder;
         builder.append_query(U("notifications"), ns_json_value.serialize().c_str());
         builder.append_query(U("appId"), env_.appid_name_.c_str());
         builder.append_query(U("cluster"), env_.cluster_name_.c_str());
 
-        //        SPDLOG_INFO("check url = {} {}", base_url, builder.to_string().c_str());
+        // SPDLOG_INFO("check url = {} {}", base_url, builder.to_string().c_str());
 
         //block 61s if no change
         auto response = request_client.request(web::http::methods::GET, builder.to_string()).get();
@@ -142,6 +148,7 @@ web::http::status_code apollo_mul_yaml_client::checkNotify()
                     }
                 }
                 ns_notifyId_map_[ns_name] = notify_id;
+                // SPDLOG_INFO("ns name: {}, notifuid: {}", ns_name, notify_id);
             }
             SPDLOG_INFO("config modify, will to get new config!");
         } else if (response.status_code() == web::http::status_codes::NotModified) {
@@ -152,7 +159,12 @@ web::http::status_code apollo_mul_yaml_client::checkNotify()
         return response.status_code();
     } catch (std::exception &e) {
         SPDLOG_ERROR("Exception: {} ", e.what());
-        return web::http::status_codes::BadRequest;
+        if (!strcmp(e.what(), "Failed to read HTTP status line")) {
+            //net block may cast read status line error!
+            return web::http::status_codes::NotModified;
+        } else {
+            return web::http::status_codes::BadGateway;
+        }
     }
 }
 

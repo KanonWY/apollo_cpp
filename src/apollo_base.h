@@ -145,7 +145,7 @@ public:
             auto response = requestClient.request(web::http::methods::GET).get();
             if (response.status_code() == web::http::status_codes::OK) {
                 auto json_data_from_server = response.extract_json().get();
-                SPDLOG_INFO("{}", json_data_from_server.serialize().c_str());
+                // SPDLOG_INFO("{}", json_data_from_server.serialize().c_str());
                 node = YAML::Load(json_data_from_server[U("configurations")].serialize().c_str());
                 if (node["content"]) {
                     SPDLOG_INFO("getYamlConfig << {} >> success!", namespace_name);
