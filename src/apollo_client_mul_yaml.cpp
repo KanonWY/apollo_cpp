@@ -82,9 +82,9 @@ void apollo_mul_yaml_client::submitNotificationFunc()
             if (reconnect_times_ <= 0) {
                 break;
             } else {
-                continue;
                 SPDLOG_INFO("start to reconnect! times {},....", reconnect_times_);
                 reconnect_times_--;
+                continue;
             }
         }
     }
