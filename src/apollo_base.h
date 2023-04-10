@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <yaml-cpp/yaml.h>
+#include <tinyxml2.h>
 #include <spdlog/spdlog.h>
 #include <cpprest/http_client.h>
 
@@ -36,6 +37,11 @@ inline bool ends_with(const std::basic_string<charT> &big, const std::basic_stri
     return valid_ and ends_with_;
 }
 
+// 递归解析yaml节点
+void parseYamlNode(const YAML::Node &node, std::map<std::string, std::string> &result, const std::string &prefix = "");
+
+void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, std::string> &result);
+
 inline std::string get_non_buffer_url(const std::string &config_server_url,
                                       const std::string &appid,
                                       const std::string &cluster_name,
@@ -47,6 +53,11 @@ inline std::string get_non_buffer_url(const std::string &config_server_url,
        << appid << "/" << cluster_name << "/" << namespace_name;
     SPDLOG_INFO("url = {}", ss.str());
     return ss.str();
+}
+//sprintf(url, "%s/notifications/v2", env_.address_.c_str());
+inline std::string get_notify_url(const std::string &config_server_url)
+{
+    return {config_server_url + (std::string("/notifications/v2"))};
 }
 
 template <typename T>
@@ -61,7 +72,7 @@ public:
 
     std::optional<std::string> getCf(const std::string &base_url)
     {
-        return getCf_(base_url);
+        return static_cast<T *>(this)->getCf_(base_url);
     }
 
     std::optional<std::string> getCf_(const std::string &base_url)
@@ -106,32 +117,61 @@ public:
     }
 };
 
-struct YmlPolicy
+class YmlPolicy : public BasePolicy<YamlPolicy>
 {
+public:
     static bool checkNamespace_(const std::string &ns)
     {
         return ends_with(ns, std::string(".yml"));
     }
 };
 
-struct PropertiesPolicy
+class PropertiesPolicy : public BasePolicy<PropertiesPolicy>
 {
+public:
     static bool checkNamespace_(const std::string &ns)
     {
         return true;
     }
+
+    std::optional<std::string> getCf_(const std::string &base_url)
+    {
+        std::map<std::string, std::string> resMap;
+        try {
+            auto requestClient = web::http::client::http_client(base_url);
+            auto response = requestClient.request(web::http::methods::GET).get();
+            if (response.status_code() == web::http::status_codes::OK) {
+                // return a json object
+                auto jsonData = response.extract_json().get();
+                SPDLOG_INFO("jsonData content {}", jsonData.serialize().c_str());
+                //get configurations from json object
+                //                auto configJsonObj = jsonData[U("configurations")].serialize();
+                if (jsonData[U("configurations")].is_object()) {
+                    return jsonData[U("configurations")].serialize();
+                } else {
+                    SPDLOG_INFO("properties is not exist!");
+                    return {};
+                }
+            }
+        } catch (std::exception &e) {
+            SPDLOG_ERROR("Exception: {}", e.what());
+        }
+        return {};
+    }
 };
 
-struct JsonPolicy
+class JsonPolicy : public BasePolicy<JsonPolicy>
 {
+public:
     static bool checkNamespace_(const std::string &ns)
     {
         return ends_with(ns, std::string(".json"));
     }
 };
 
-struct TxtPolicy
+class TxtPolicy : public BasePolicy<TxtPolicy>
 {
+public:
     static bool checkNamespace_(const std::string &ns)
     {
         return ends_with(ns, std::string(".txt"));

@@ -8,7 +8,7 @@ file(GLOB_RECURSE SRC_FILES "*.cpp")
 
 if (GEN_SHARED_LIB)
     add_library(apollo_cpp SHARED ${SRC_FILES})
-    target_link_libraries(apollo_cpp PUBLIC cpprestsdk::cpprest spdlog yaml-cpp)
+    target_link_libraries(apollo_cpp PUBLIC cpprestsdk::cpprest spdlog yaml-cpp tinyxml2)
     target_include_directories(apollo_cpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 

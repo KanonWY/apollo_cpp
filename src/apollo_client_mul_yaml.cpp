@@ -98,13 +98,7 @@ void apollo_mul_yaml_client::submitNotificationFunc()
 
 web::http::status_code apollo_mul_yaml_client::checkNotify()
 {
-    std::string base_url;
-    {
-        char *url = new char[266];
-        sprintf(url, "%s/notifications/v2", env_.address_.c_str());
-        base_url = url;
-        delete[] url;
-    }
+    auto base_url = get_notify_url(env_.address_);
     try {
         web::http::client::http_client_config client_config;
         client_config.set_timeout(std::chrono::seconds(62));

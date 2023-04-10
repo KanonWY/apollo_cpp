@@ -8,6 +8,37 @@
 namespace apollo_client
 {
 
+void parseYamlNode(const YAML::Node &node, std::map<std::string, std::string> &result, const std::string &prefix)
+{
+    if (node.IsScalar()) {
+        // 如果是叶子节点，添加键值对到结果中
+        result[prefix] = node.as<std::string>();
+    } else if (node.IsMap()) {
+        // 如果是映射节点，递归解析每个子节点
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            auto key = it->first.as<std::string>();
+            std::string newPrefix;
+            if (prefix.empty()) {
+                newPrefix = key;
+            } else {
+                newPrefix = prefix + "/" + key;
+            }
+            parseYamlNode(it->second, result, newPrefix);
+        }
+    } else if (node.IsSequence()) {
+        // 如果是序列节点，递归解析每个子节点并添加编号前缀
+        int i = 0;
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            std::string newPrefix = prefix + "[" + std::to_string(i++) + "]";
+            parseYamlNode(*it, result, newPrefix);
+        }
+    }
+}
+
+void parseXmlNode(tinyxml2::XMLElement *ode, std::map<std::string, std::string> &result)
+{
+}
+
 std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std::string &config_server_url,
                                                                        const std::string &appidName,
                                                                        const std::string &namespaceName,
@@ -28,7 +59,7 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std
             auto jsonData = response.extract_json().get();
             SPDLOG_INFO("jsonData content {}", jsonData.serialize().c_str());
             //get configurations from json object
-            auto configJsonObj = jsonData[U(CONFIGURATIONS_NAME)].as_object();
+            auto configJsonObj = jsonData[U("configurations")].as_object();
             // fill to map
             for (auto &configItem : configJsonObj) {
                 resMap.insert({configItem.first, configItem.second.as_string()});

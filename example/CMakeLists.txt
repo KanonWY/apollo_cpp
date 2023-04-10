@@ -25,3 +25,6 @@ target_link_libraries(sample_apollo_openapi PUBLIC apollo_cpp)
 
 add_executable(sample_apollo_openapi_client sample_apollo_openapi_client.cpp)
 target_link_libraries(sample_apollo_openapi_client PUBLIC apollo_cpp)
+
+add_executable(sample_AppConfig sample_AppConfig.cpp)
+target_link_libraries(sample_AppConfig PUBLIC apollo_cpp)

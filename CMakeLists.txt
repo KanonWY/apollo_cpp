@@ -68,7 +68,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/release/arc")
 # subdirectory
 add_subdirectory(src)
 add_subdirectory(apollo_client_proxy)
-add_subdirectory(apollo_client)
 if (USE_EXAMPLE)
     add_subdirectory(example)
 endif ()
