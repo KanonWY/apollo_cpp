@@ -22,11 +22,28 @@ void test_get_config_nobuffer()
     }
 }
 
+void test_yaml()
+{
+    test_env env = {"http://kanon2020.top:8080", "SampleApp", "test_yaml.yaml", "default"};
+    apollo_client::apollo_base base_client;
+    auto res = base_client.getConfig(env.base_url_, env.appid_, env.namespace_, env.cluster_);
+    if (res.has_value()) {
+        SPDLOG_INFO(" config \n {}", res.value());
+    }
+}
 
+void test_xml()
+{
+    test_env env = {"http://kanon2020.top:8080", "SampleApp", "test_xml.xml", "default"};
+    apollo_client::apollo_base base_client;
+    auto res = base_client.getConfig<apollo_client::XmlPolicy>(env.base_url_, env.appid_, env.namespace_, env.cluster_);
+    if (res.has_value()) {
+        SPDLOG_INFO(" config \n {}", res.value());
+    }
+}
 
 int main()
 {
-    /* test_get_config_nobuffer_yaml(); */
-    //    test_get_config_nobuffer();
+    test_xml();
     return 0;
 }

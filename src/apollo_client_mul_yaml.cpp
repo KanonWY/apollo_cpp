@@ -51,13 +51,13 @@ void apollo_mul_yaml_client::updateYamlConfigMap()
         // clear all content than get all new!
         ns_yaml_config_map_.clear();
         for (const auto &ns : env_.ns_map_) {
-            auto node = getYamlConfig<RE_TYPE::YAML_OBJECT>(env_.address_, env_.appid_name_, ns, env_.cluster_name_);
-            if (node.IsNull()) {
-                SPDLOG_ERROR("{} config not exist", ns);
-            } else {
+            auto node = getYamlConfig(env_.address_, env_.appid_name_, ns, env_.cluster_name_);
+            if (node.has_value()) {
                 trueStatus();
+                ns_yaml_config_map_.emplace(ns, node.value());
+            } else {
+                SPDLOG_ERROR("{} config not exist");
             }
-            ns_yaml_config_map_.emplace(ns, node);
         }
     }
     if (b_call_back_) {

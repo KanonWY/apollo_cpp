@@ -2,6 +2,7 @@
 #define __APOLLO_BASE_H__
 
 #include <string>
+#include <sstream>
 #include <map>
 #include <set>
 #include <yaml-cpp/yaml.h>
@@ -35,11 +36,106 @@ inline bool ends_with(const std::basic_string<charT> &big, const std::basic_stri
     return valid_ and ends_with_;
 }
 
-enum RE_TYPE
+inline std::string get_non_buffer_url(const std::string &config_server_url,
+                                      const std::string &appid,
+                                      const std::string &cluster_name,
+                                      const std::string &namespace_name)
 {
-    YAML_OBJECT,
-    YAML_STRING,
-    STRING_MAP,
+    std::ostringstream ss;
+    ss << config_server_url
+       << "/configs/"
+       << appid << "/" << cluster_name << "/" << namespace_name;
+    SPDLOG_INFO("url = {}", ss.str());
+    return ss.str();
+}
+
+template <typename T>
+class BasePolicy
+{
+public:
+    bool checkNamespace(const std::string &ns)
+    {
+        return static_cast<T *>(this)->checkNamespace_(ns);
+    }
+    bool checkNamespace_(const std::string &ns) { return true; }
+
+    std::optional<std::string> getCf(const std::string &base_url)
+    {
+        return getCf_(base_url);
+    }
+
+    std::optional<std::string> getCf_(const std::string &base_url)
+    {
+        try {
+            auto requestClient = web::http::client::http_client(base_url);
+            SPDLOG_INFO("base_url = {}", base_url.c_str());
+            auto response = requestClient.request(web::http::methods::GET).get();
+            if (response.status_code() == web::http::status_codes::OK) {
+                auto json_data_from_server = response.extract_json().get();
+                YAML::Node node = YAML::Load(json_data_from_server[U("configurations")].serialize().c_str());
+                if (node["content"]) {
+                    return node["content"].as<std::string>();
+                } else {
+                    SPDLOG_ERROR("config content not exist!");
+                    return {};
+                }
+            }
+        } catch (std::exception &e) {
+            SPDLOG_ERROR("Exception: {}", e.what());
+        }
+        return {};
+    }
+    virtual ~BasePolicy() = default;
+};
+
+class YamlPolicy : public BasePolicy<YamlPolicy>
+{
+public:
+    static bool checkNamespace_(const std::string &ns)
+    {
+        return ends_with(ns, std::string(".yaml"));
+    }
+};
+
+class XmlPolicy : public BasePolicy<XmlPolicy>
+{
+public:
+    static bool checkNamespace_(const std::string &ns)
+    {
+        return ends_with(ns, std::string(".xml"));
+    }
+};
+
+struct YmlPolicy
+{
+    static bool checkNamespace_(const std::string &ns)
+    {
+        return ends_with(ns, std::string(".yml"));
+    }
+};
+
+struct PropertiesPolicy
+{
+    static bool checkNamespace_(const std::string &ns)
+    {
+        return true;
+    }
+};
+
+struct JsonPolicy
+{
+    static bool checkNamespace_(const std::string &ns)
+    {
+        return ends_with(ns, std::string(".json"));
+    }
+};
+
+struct TxtPolicy
+{
+    static bool checkNamespace_(const std::string &ns)
+    {
+        return ends_with(ns, std::string(".txt"));
+    }
 };
 
 class apollo_base
@@ -53,10 +149,10 @@ public:
      * @param cluster_name
      * @return
      */
-    std::map<std::string, std::string> getConfigNoBufferInner(const std::string &config_server_url,
-                                                              const std::string &appid_name,
-                                                              const std::string &namespace_name,
-                                                              const std::string &cluster_name);
+    static std::map<std::string, std::string> getConfigNoBufferInner(const std::string &config_server_url,
+                                                                     const std::string &appid_name,
+                                                                     const std::string &namespace_name,
+                                                                     const std::string &cluster_name);
 
     /**
      * @brief get config from db.(not config server buffer)
@@ -67,11 +163,11 @@ public:
      * @param output
      * @return
      */
-    bool getConfigNoBufferInner(const std::string &config_server_url,
-                                const std::string &appid_name,
-                                const std::string &namespace_name,
-                                const std::string &cluster_name,
-                                std::map<std::string, std::string> &output);
+    static bool getConfigNoBufferInner(const std::string &config_server_url,
+                                       const std::string &appid_name,
+                                       const std::string &namespace_name,
+                                       const std::string &cluster_name,
+                                       std::map<std::string, std::string> &output);
 
     /**
      * @brief get config from db by key.
@@ -82,11 +178,11 @@ public:
      * @param key
      * @return
      */
-    std::string getConfigNoBufferByKeyInner(const std::string &config_server_url,
-                                            const std::string &appid_name,
-                                            const std::string &namespace_name,
-                                            const std::string &cluster_name,
-                                            const std::string &key);
+    static std::string getConfigNoBufferByKeyInner(const std::string &config_server_url,
+                                                   const std::string &appid_name,
+                                                   const std::string &namespace_name,
+                                                   const std::string &cluster_name,
+                                                   const std::string &key);
 
     /**
      * @brief  get config from db, return yaml first level key:value string.
@@ -102,123 +198,36 @@ public:
                                                                            const std::string &cluster_name);
 
 public:
-    /**
-     * @brief get yaml node for db.
-     * @tparam T value template.
-     * @param config_server_url
-     * @param appid_name
-     * @param namespace_name
-     * @param cluster_name
-     * @return
-     */
-    template <RE_TYPE T>
-    typename std::enable_if<T == RE_TYPE::YAML_OBJECT, YAML::Node>::type getYamlConfig(const std::string &config_server_url,
-                                                                                       const std::string &appid_name,
-                                                                                       const std::string &namespace_name,
-                                                                                       const std::string &cluster_name)
+    template <typename ConfigPolicy = YamlPolicy>
+    static std::optional<std::string> getConfig(const std::string &config_server_url,
+                                                const std::string &appid_name,
+                                                const std::string &namespace_name,
+                                                const std::string &cluster_name)
     {
-        YAML::Node node;
-        //TODO: check the namespace_name end with .yaml
-        if (!ends_with(namespace_name, std::string(".yaml"))) {
-            SPDLOG_ERROR("namespace_name error, it must be .yaml!");
-            return node;
-        }
         if ((config_server_url.size() + appid_name.size() + namespace_name.size() + cluster_name.size()) > 266) {
             SPDLOG_ERROR("URL length error!");
+            return {};
+        }
+        std::shared_ptr<BasePolicy<ConfigPolicy>> sp = std::make_shared<ConfigPolicy>();
+        if (!sp->checkNamespace(namespace_name)) {
+            return {};
+        }
+        auto base_url = get_non_buffer_url(config_server_url, appid_name, cluster_name, namespace_name);
+        return sp->getCf(base_url);
+    }
+
+    static std::optional<YAML::Node> getYamlConfig(const std::string &config_server_url,
+                                                   const std::string &appid_name,
+                                                   const std::string &namespace_name,
+                                                   const std::string &cluster_name)
+    {
+        auto str = getConfig<YamlPolicy>(config_server_url, appid_name, namespace_name, cluster_name);
+        if (str.has_value()) {
+            auto node = YAML::Load(str.value());
             return node;
+        } else {
+            return {};
         }
-        std::string base_url;
-        base_url.reserve(266);
-        {
-            char *url = new char[266];
-            sprintf(url, "%s/configs/%s/%s/%s", config_server_url.c_str(),
-                    appid_name.c_str(), cluster_name.c_str(),
-                    namespace_name.c_str());
-            base_url = url;
-            delete[] url;
-        }
-        try {
-            // static int count;
-            // web::http::client::http_client_config config;
-            // config.set_timeout(std::chrono::milliseconds(20));
-            auto requestClient = web::http::client::http_client(base_url);
-            auto response = requestClient.request(web::http::methods::GET).get();
-            if (response.status_code() == web::http::status_codes::OK) {
-                auto json_data_from_server = response.extract_json().get();
-                // SPDLOG_INFO("{}", json_data_from_server.serialize().c_str());
-                node = YAML::Load(json_data_from_server[U("configurations")].serialize().c_str());
-                if (node["content"]) {
-                    SPDLOG_INFO("getYamlConfig << {} >> success!", namespace_name);
-                    return node["content"];
-                }
-                SPDLOG_ERROR("config content not exist, maybe not yaml config type!");
-            }
-        } catch (std::exception &e) {
-            SPDLOG_ERROR("Exception: {}", e.what());
-        }
-        return node;
-    }
-
-    /**
-     * @brief get config string from db.
-     * @tparam T
-     * @param config_server_url
-     * @param appid_name
-     * @param namespace_name
-     * @param cluster_name
-     * @return
-     */
-    template <RE_TYPE T>
-    typename std::enable_if<T == RE_TYPE::YAML_STRING, std::string>::type getYamlConfig(const std::string &config_server_url,
-                                                                                        const std::string &appid_name,
-                                                                                        const std::string &namespace_name,
-                                                                                        const std::string &cluster_name)
-    {
-        std::string res_value;
-        if (!ends_with(namespace_name, std::string(".yaml"))) {
-            SPDLOG_ERROR("namespace_name error, it must be .yaml!");
-            return res_value;
-        }
-        if ((config_server_url.size() + appid_name.size() + namespace_name.size() + cluster_name.size()) > 266) {
-            SPDLOG_ERROR("url large than 200");
-            return res_value;
-        }
-        std::string base_url;
-        base_url.reserve(266);
-        {
-            char *url = new char[266];
-            sprintf(url, "%s/configs/%s/%s/%s", config_server_url.c_str(),
-                    appid_name.c_str(), cluster_name.c_str(),
-                    namespace_name.c_str());
-            base_url = url;
-            delete[] url;
-        }
-        try {
-            auto requestClient = web::http::client::http_client(base_url);
-            SPDLOG_INFO("base_url = {}", base_url.c_str());
-            auto response = requestClient.request(web::http::methods::GET).get();
-            if (response.status_code() == web::http::status_codes::OK) {
-                auto json_data_from_server = response.extract_json().get();
-                YAML::Node node = YAML::Load(json_data_from_server[U("configurations")].serialize().c_str());
-                if (node["content"]) {
-                    res_value = node["content"].as<std::string>();
-                }
-                SPDLOG_ERROR("config content not exist, maybe not yaml config type!");
-            }
-        } catch (std::exception &e) {
-            SPDLOG_ERROR("Exception: {}", e.what());
-        }
-        return res_value;
-    }
-
-    template <RE_TYPE T>
-    typename std::enable_if<T == RE_TYPE::STRING_MAP, std::map<std::string, std::string>>::type getYamlConfig(const std::string &config_server_url,
-                                                                                                              const std::string &appid_name,
-                                                                                                              const std::string &namespace_name,
-                                                                                                              const std::string &cluster_name)
-    {
-        //TODO
-        return std::map<std::string, std::string>{};
     }
 
     virtual ~apollo_base() = default;

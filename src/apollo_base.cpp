@@ -19,19 +19,9 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std
     }
     // allocator a return value
     std::map<std::string, std::string> resMap;
-    // contact url
-    std::string baseUrl;
-    baseUrl.reserve(200);
-    {
-        char *url = new char[200];
-        sprintf(url, NO_BUFFER_URL, config_server_url.c_str(),
-                appidName.c_str(), clusterName.c_str(),
-                namespaceName.c_str());
-        baseUrl = url;
-        delete[] url;
-    }
+    auto base_url = get_non_buffer_url(config_server_url, appidName, clusterName, namespaceName);
     try {
-        auto requestClient = web::http::client::http_client(baseUrl);
+        auto requestClient = web::http::client::http_client(base_url);
         auto response = requestClient.request(web::http::methods::GET).get();
         if (response.status_code() == web::http::status_codes::OK) {
             // return a json object
@@ -64,21 +54,12 @@ bool apollo_base::getConfigNoBufferInner(const std::string &config_server_url,
     }
     // contact url
     output.clear();
-    std::string baseUrl;
-    baseUrl.reserve(200);
-    {
-        char *url = new char[200];
-        sprintf(url, NO_BUFFER_URL, config_server_url.c_str(),
-                appidName.c_str(), clusterName.c_str(),
-                namespaceName.c_str());
-        baseUrl = url;
-        delete[] url;
-    }
+    auto base_url = get_non_buffer_url(config_server_url, appidName, clusterName, namespaceName);
     try {
-        auto requestClient = web::http::client::http_client(baseUrl);
+        auto requestClient = web::http::client::http_client(base_url);
         auto response = requestClient.request(web::http::methods::GET).get();
         if (response.status_code() == web::http::status_codes::OK) {
-            SPDLOG_INFO("requestClient => {}", baseUrl.c_str());
+            SPDLOG_INFO("requestClient => {}", base_url.c_str());
             // return a json object
             auto jsonData = response.extract_json().get();
             //get configurations from json object
@@ -106,19 +87,9 @@ std::string apollo_base::getConfigNoBufferByKeyInner(const std::string &config_s
         SPDLOG_ERROR("url larger than 200!");
         return {};
     }
-    // contact url
-    std::string baseUrl;
-    baseUrl.reserve(200);
-    {
-        char *url = new char[200];
-        sprintf(url, NO_BUFFER_URL, config_server_url.c_str(),
-                appidName.c_str(), clusterName.c_str(),
-                namespaceName.c_str());
-        baseUrl = url;
-        delete[] url;
-    }
+    auto base_url = get_non_buffer_url(config_server_url, appidName, clusterName, namespaceName);
     try {
-        auto requestClient = web::http::client::http_client(baseUrl);
+        auto requestClient = web::http::client::http_client(base_url);
         auto response = requestClient.request(web::http::methods::GET).get();
         if (response.status_code() == web::http::status_codes::OK) {
             // return a json object
@@ -150,21 +121,10 @@ std::map<std::string, std::string> apollo_base::getConfigNoBufferInnerByYAML(con
     // allocator a return value
     std::map<std::string, std::string> resMap;
     // contact url
-    std::string baseUrl;
-    std::string namespace_filename = namespace_name;
-    namespace_filename.append(".yaml");
-    baseUrl.reserve(200);
-    {
-        char *url = new char[200];
-        sprintf(url, NO_BUFFER_URL, config_server_url.c_str(),
-                appid_name.c_str(), cluster_name.c_str(),
-                namespace_filename.c_str());
-        baseUrl = url;
-        delete[] url;
-    }
+    auto base_url = get_non_buffer_url(config_server_url, appid_name, cluster_name, namespace_name);
     try {
-        auto requestClient = web::http::client::http_client(baseUrl);
-        SPDLOG_INFO("base_url = {}", baseUrl.c_str());
+        auto requestClient = web::http::client::http_client(base_url);
+        SPDLOG_INFO("base_url = {}", base_url.c_str());
         auto response = requestClient.request(web::http::methods::GET).get();
         if (response.status_code() == web::http::status_codes::OK) {
             // return a json object
