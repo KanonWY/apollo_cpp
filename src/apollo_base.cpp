@@ -35,8 +35,17 @@ void parseYamlNode(const YAML::Node &node, std::map<std::string, std::string> &r
     }
 }
 
-void parseXmlNode(tinyxml2::XMLElement *ode, std::map<std::string, std::string> &result)
+void parseXmlNode(tinyxml2::XMLElement *element, std::map<std::string, std::string> &result, const std::string &prefix)
 {
+    std::string currentKey = prefix.empty() ? element->Name() : prefix + "/" + element->Name();
+    if(element->GetText() != nullptr)
+    {
+        result[currentKey] = element->GetText();
+    }
+    for(auto child = element->FirstChildElement(); child != nullptr; child = child->NextSiblingElement())
+    {
+        parseXmlNode(child, result, currentKey);
+    }
 }
 
 std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std::string &config_server_url,

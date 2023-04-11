@@ -40,7 +40,7 @@ inline bool ends_with(const std::basic_string<charT> &big, const std::basic_stri
 // 递归解析yaml节点
 void parseYamlNode(const YAML::Node &node, std::map<std::string, std::string> &result, const std::string &prefix = "");
 
-void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, std::string> &result);
+void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, std::string> &result, const std::string &prefix = "");
 
 inline std::string get_non_buffer_url(const std::string &config_server_url,
                                       const std::string &appid,

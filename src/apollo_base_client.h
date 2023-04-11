@@ -185,7 +185,14 @@ public:
     void init(const AppConfig<T1> &config)
     {
         config_ = config;
-        //1. update
+        if constexpr (T1 == SINGLE_NAMESPACE) {
+            std::get<0>(notify_container_) = config_.namespace_;
+            std::get<1>(notify_container_) = -1;
+        } else {
+            for (const auto &item : config_.namespace_) {
+                notify_container_[item] = -1;
+            }
+        }
         status_ = STARTING;
         updateAllConfig();
         status_ = STARTED;
@@ -228,7 +235,7 @@ private:
         } else if constexpr ((T2 == STRING_MAP) && (T1 == SINGLE_NAMESPACE)) {
             updateOneNs(config_.namespace_);
         } else {
-            SPDLOG_INFO("UNIMPLICATION");
+            SPDLOG_INFO("UNKNOW TYPE");
         }
     }
 
@@ -244,21 +251,22 @@ private:
                     std::lock_guard<std::mutex> locker(container_mutex_);
                     auto node = YAML::Load(node_str.value());
                     //也许可以用递归优化
-                    parseYamlNode(node, container_);
+                    parseYamlNode(node, container_, ns);
                 } else {
                     SPDLOG_ERROR("{} have not config!", ns);
                 }
             } else if (apollo_client::ends_with(ns, std::string(".xml"))) {
-                auto xml_str = apollo_client::apollo_base::getConfig<apollo_client::XmlPolicy>(config_.appid_,
+                auto xml_str = apollo_client::apollo_base::getConfig<apollo_client::XmlPolicy>(config_.address_,
                                                                                                config_.appid_,
                                                                                                ns,
                                                                                                config_.cluster_);
                 if (xml_str.has_value()) {
                     std::lock_guard<std::mutex> locker(container_mutex_);
                     tinyxml2::XMLDocument doc;
-                    doc.Parse(xml_str->c_str());
+                    doc.Parse(xml_str.value().c_str());
                     //也许可以用递归优化
-                    parseXmlNode(doc.RootElement(), container_);
+                    SPDLOG_INFO("递归解析xml {}", xml_str.value());
+                    parseXmlNode(doc.RootElement(), container_, ns);
                 } else {
                     SPDLOG_ERROR("{} have not config!", ns);
                 }
@@ -271,12 +279,18 @@ private:
         } else {
             SPDLOG_INFO("UNIMPLICATION");
         }
+        if constexpr (T2 == STRING_MAP) {
+            for (const auto &item : container_) {
+                std::cout << item.first << " " << item.second << std::endl;
+            }
+        }
     }
 
     void startBackThread()
     {
         if (status_ == STARTED) {
             thread_start_ = true;
+            SPDLOG_INFO("start Back thread ...!");
             thread_ = std::thread(&apollo_client_base::backThread, this);
         } else {
             SPDLOG_ERROR("can't start back thread!");
@@ -286,7 +300,9 @@ private:
     void backThread()
     {
         while (thread_start_) {
+            SPDLOG_INFO("start checkNotify!");
             auto res_status_code = checkNotify();
+            SPDLOG_INFO("end checkNotify!");
             if (res_status_code == web::http::status_codes::NotModified) {
                 reconnect_times_ = 5;
             } else if (res_status_code == web::http::status_codes::OK) {
@@ -303,6 +319,7 @@ private:
                 }
             }
         }
+        SPDLOG_INFO("back thread will exit!");
     }
 
     web::http::status_code checkNotify()

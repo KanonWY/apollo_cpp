@@ -17,11 +17,15 @@ void testMultiNs()
     //    apollo_client::apollo_client_base<apollo_client::MULTI_NAMESPACE, apollo_client::STRING_MAP> cl;
     //    //    cl.init()
     apollo_client::MultiNsConfig ns;
-    ns.SetAddress("http://kanon2020.top:8080").SetAppid("SampleApp").AppendNamespace("test_yaml.yaml");
+    ns.SetAddress("http://kanon2020.top:8080").SetAppid("SampleApp").AppendNamespace("test_yaml.yaml").AppendNamespace("test_xml.xml");
     apollo_client::apollo_client_multi_ns cl;
     cl.init(ns);
     auto res = cl.getConfigByKey("key1");
     std::cout << "res = " << res.c_str() << std::endl;
+
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
 }
 
 int main()
