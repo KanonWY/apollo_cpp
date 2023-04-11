@@ -5,11 +5,32 @@
 // XmlRpc++ Copyright (c) 2002-2003 by Chris Morley
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 #include <ctime>
 
 namespace apollo_client
 {
+
+class XmlRpcException : public std::exception
+{
+public:
+    //! Constructor
+    //!   @param message  A descriptive error message
+    //!   @param code     An integer error code
+    explicit XmlRpcException(std::string message, int code = -1) : _message(std::move(message)), _code(code) {}
+
+    //! Return the error message.
+    [[nodiscard]] const std::string &getMessage() const { return _message; }
+
+    //! Return the error code.
+    [[nodiscard]] int getCode() const { return _code; }
+
+private:
+    std::string _message;
+    int _code;
+};
+
 //! RPC method arguments and results are represented by Values
 //   should probably refcount them...
 class XmlRpcValue
@@ -29,11 +50,11 @@ public:
     };
 
     // Non-primitive types
-    typedef std::vector<char> BinaryData;
-    typedef std::vector<XmlRpcValue> ValueArray;
-    typedef std::map<std::string, XmlRpcValue> ValueStruct;
-    typedef ValueStruct::iterator iterator;
-    typedef ValueStruct::const_iterator const_iterator;
+    using BinaryData = std::vector<char>;
+    using ValueArray = std::vector<XmlRpcValue>;
+    using ValueStruct = std::map<std::string, XmlRpcValue>;
+    using iterator = ValueStruct::iterator;
+    using const_iterator = ValueStruct::const_iterator;
 
     //! Constructors
     XmlRpcValue() : _type(TypeInvalid) { _value.asBinary = nullptr; }
@@ -62,11 +83,11 @@ public:
     }
 
     //! Construct from xml, beginning at *offset chars into the string, updates offset
-    XmlRpcValue(std::string const &xml, int *offset) : _type(TypeInvalid)
-    {
-        if (!fromXml(xml, offset))
-            _type = TypeInvalid;
-    }
+    //    XmlRpcValue(std::string const &xml, int *offset) : _type(TypeInvalid)
+    //    {
+    //        if (!fromXml(xml, offset))
+    //            _type = TypeInvalid;
+    //    }
 
     //! Copy
     XmlRpcValue(XmlRpcValue const &rhs) : _type(TypeInvalid) { *this = rhs; }
@@ -79,6 +100,7 @@ public:
 
     // Operators
     XmlRpcValue &operator=(XmlRpcValue const &rhs);
+    // use operator=
     XmlRpcValue &operator=(bool const &rhs) { return operator=(XmlRpcValue(rhs)); }
     XmlRpcValue &operator=(int const &rhs) { return operator=(XmlRpcValue(rhs)); }
     XmlRpcValue &operator=(double const &rhs) { return operator=(XmlRpcValue(rhs)); }
@@ -92,26 +114,31 @@ public:
         assertTypeOrInvalid(TypeBoolean);
         return _value.asBool;
     }
+
     operator int &()
     {
         assertTypeOrInvalid(TypeInt);
         return _value.asInt;
     }
+
     operator double &()
     {
         assertTypeOrInvalid(TypeDouble);
         return _value.asDouble;
     }
+
     operator std::string &()
     {
         assertTypeOrInvalid(TypeString);
         return *_value.asString;
     }
+
     operator BinaryData &()
     {
         assertTypeOrInvalid(TypeBase64);
         return *_value.asBinary;
     }
+
     operator struct tm &()
     {
         assertTypeOrInvalid(TypeDateTime);
@@ -123,26 +150,31 @@ public:
         assertTypeOrInvalid(TypeBoolean);
         return _value.asBool;
     }
+
     operator const int &() const
     {
         assertTypeOrInvalid(TypeInt);
         return _value.asInt;
     }
+
     operator const double &() const
     {
         assertTypeOrInvalid(TypeDouble);
         return _value.asDouble;
     }
+
     operator const std::string &() const
     {
         assertTypeOrInvalid(TypeString);
         return *_value.asString;
     }
+
     operator const BinaryData &() const
     {
         assertTypeOrInvalid(TypeBase64);
         return *_value.asBinary;
     }
+
     operator const struct tm &() const
     {
         assertTypeOrInvalid(TypeDateTime);
@@ -165,17 +197,20 @@ public:
         assertStruct();
         return (*_value.asStruct)[k];
     }
+
     XmlRpcValue &operator[](std::string const &k)
     {
         assertStruct();
         return (*_value.asStruct)[k];
     }
+
     XmlRpcValue &operator[](const char *k) const
     {
         assertStruct();
         std::string s(k);
         return (*_value.asStruct)[s];
     }
+
     XmlRpcValue &operator[](const char *k)
     {
         assertStruct();
@@ -194,12 +229,12 @@ public:
         return (*_value.asStruct).end();
     }
 
-    const_iterator begin() const
+    [[nodiscard]] const_iterator begin() const
     {
         assertStruct();
         return (*_value.asStruct).begin();
     }
-    const_iterator end() const
+    [[nodiscard]] const_iterator end() const
     {
         assertStruct();
         return (*_value.asStruct).end();
@@ -207,35 +242,35 @@ public:
 
     // Accessors
     //! Return true if the value has been set to something.
-    bool valid() const { return _type != TypeInvalid; }
+    [[nodiscard]] bool valid() const { return _type != TypeInvalid; }
 
     //! Return the type of the value stored. \see Type.
-    Type const &getType() const { return _type; }
+    [[nodiscard]] Type const &getType() const { return _type; }
 
     //! Return the size for string, base64, array, and struct values.
-    int size() const;
+    [[nodiscard]] int size() const;
 
     //! Specify the size for array values. Array values will grow beyond this size if needed.
     void setSize(int size) { assertArray(size); }
 
     //! Check for the existence of a struct member by name.
-    bool hasMember(const std::string &name) const;
+    [[nodiscard]] bool hasMember(const std::string &name) const;
 
     //! Decode xml. Destroys any existing value.
-    bool fromXml(std::string const &valueXml, int *offset);
+    //    bool fromXml(std::string const &valueXml, int *offset);
 
     //! Encode the Value in xml
-    std::string toXml() const;
-
-    //! Write the value (no xml encoding)
-    std::ostream &write(std::ostream &os) const;
+    //    std::string toXml() const;
+    //
+    //    //! Write the value (no xml encoding)
+    //    std::ostream &write(std::ostream &os) const;
 
     // Formatting
     //! Return the format used to write double values.
-    static std::string const &getDoubleFormat() { return _doubleFormat; }
-
-    //! Specify the format used to write double values.
-    static void setDoubleFormat(const char *f) { _doubleFormat = f; }
+    //    static std::string const &getDoubleFormat() { return _doubleFormat; }
+    //
+    //    //! Specify the format used to write double values.
+    //    static void setDoubleFormat(const char *f) { _doubleFormat = f; }
 
 protected:
     // Clean up
@@ -250,27 +285,27 @@ protected:
     void assertStruct();
 
     // XML decoding
-    bool boolFromXml(std::string const &valueXml, int *offset);
-    bool intFromXml(std::string const &valueXml, int *offset);
-    bool doubleFromXml(std::string const &valueXml, int *offset);
-    bool stringFromXml(std::string const &valueXml, int *offset);
-    bool timeFromXml(std::string const &valueXml, int *offset);
-    bool binaryFromXml(std::string const &valueXml, int *offset);
-    bool arrayFromXml(std::string const &valueXml, int *offset);
-    bool structFromXml(std::string const &valueXml, int *offset);
+    //    bool boolFromXml(std::string const &valueXml, int *offset);
+    //    bool intFromXml(std::string const &valueXml, int *offset);
+    //    bool doubleFromXml(std::string const &valueXml, int *offset);
+    //    bool stringFromXml(std::string const &valueXml, int *offset);
+    //    bool timeFromXml(std::string const &valueXml, int *offset);
+    //    bool binaryFromXml(std::string const &valueXml, int *offset);
+    //    bool arrayFromXml(std::string const &valueXml, int *offset);
+    //    bool structFromXml(std::string const &valueXml, int *offset);
 
     // XML encoding
-    std::string boolToXml() const;
-    std::string intToXml() const;
-    std::string doubleToXml() const;
-    std::string stringToXml() const;
-    std::string timeToXml() const;
-    std::string binaryToXml() const;
-    std::string arrayToXml() const;
-    std::string structToXml() const;
+    //    std::string boolToXml() const;
+    //    std::string intToXml() const;
+    //    std::string doubleToXml() const;
+    //    std::string stringToXml() const;
+    //    std::string timeToXml() const;
+    //    std::string binaryToXml() const;
+    //    std::string arrayToXml() const;
+    //    std::string structToXml() const;
 
     // Format strings
-    static std::string _doubleFormat;
+    //    static std::string _doubleFormat;
 
     // Type tag and values
     Type _type;
@@ -287,7 +322,7 @@ protected:
         BinaryData *asBinary;
         ValueArray *asArray;
         ValueStruct *asStruct;
-    } _value;
+    } _value{};
 };
 }; // namespace apollo_client
 std::ostream &operator<<(std::ostream &os, const apollo_client::XmlRpcValue &v);
