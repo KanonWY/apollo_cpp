@@ -10,27 +10,38 @@ namespace apollo_client
 
 void parseYamlNode(const YAML::Node &node, std::map<std::string, std::string> &result, const std::string &prefix)
 {
-    if (node.IsScalar()) {
-        // 如果是叶子节点，添加键值对到结果中
-        result[prefix] = node.as<std::string>();
+    if (node.IsScalar() || node.IsSequence() || node.IsNull()) {
+        if (node.IsNull()) {
+            result[prefix] = {};
+        } else {
+            std::stringstream ss;
+            ss << node;
+            result[prefix] = ss.str();
+        }
     } else if (node.IsMap()) {
-        // 如果是映射节点，递归解析每个子节点
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
             std::string newPrefix;
-            if (prefix.empty()) {
-                newPrefix = key;
-            } else {
-                newPrefix = prefix + "/" + key;
-            }
+            newPrefix = prefix.empty() ? key : (prefix + "/" + key);
             parseYamlNode(it->second, result, newPrefix);
         }
-    } else if (node.IsSequence()) {
-        // 如果是序列节点，递归解析每个子节点并添加编号前缀
-        int i = 0;
+    }
+}
+
+void parseYamlNode(const YAML::Node &node, std::map<std::string, YAML::Node> &result, const std::string &prefix)
+{
+    if (node.IsScalar() || node.IsSequence() || node.IsNull()) {
+        if (node.IsNull()) {
+            result[prefix] = YAML::Node();
+        } else {
+            result[prefix] = node;
+        }
+    } else if (node.IsMap()) {
         for (auto it = node.begin(); it != node.end(); ++it) {
-            std::string newPrefix = prefix + "[" + std::to_string(i++) + "]";
-            parseYamlNode(*it, result, newPrefix);
+            auto key = it->first.as<std::string>();
+            std::string newPrefix;
+            newPrefix = prefix.empty() ? key : (prefix + "/" + key);
+            parseYamlNode(it->second, result, newPrefix);
         }
     }
 }
@@ -38,14 +49,16 @@ void parseYamlNode(const YAML::Node &node, std::map<std::string, std::string> &r
 void parseXmlNode(tinyxml2::XMLElement *element, std::map<std::string, std::string> &result, const std::string &prefix)
 {
     std::string currentKey = prefix.empty() ? element->Name() : prefix + "/" + element->Name();
-    if(element->GetText() != nullptr)
-    {
+    if (element->GetText() != nullptr) {
         result[currentKey] = element->GetText();
     }
-    for(auto child = element->FirstChildElement(); child != nullptr; child = child->NextSiblingElement())
-    {
+    for (auto child = element->FirstChildElement(); child != nullptr; child = child->NextSiblingElement()) {
         parseXmlNode(child, result, currentKey);
     }
+}
+
+void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, YAML::Node> &result, const std::string &prefix)
+{
 }
 
 std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std::string &config_server_url,

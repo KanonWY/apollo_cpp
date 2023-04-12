@@ -10,6 +10,7 @@
 #include <cpprest/http_client.h>
 #include <spdlog/spdlog.h>
 #include <tinyxml2.h>
+#include <yaml-cpp/yaml.h>
 
 #include "apollo_base.h"
 
@@ -25,6 +26,7 @@ enum NAMESPACE_TYPE
 enum STORE_TYPE
 {
     STRING_MAP,
+    NODE_MAP,
 };
 
 template <NAMESPACE_TYPE T>
@@ -70,6 +72,12 @@ template <>
 struct store_container<STRING_MAP>
 {
     using STORE_CONTAINER_TYPE = std::map<std::string, std::string>;
+};
+
+template <>
+struct store_container<NODE_MAP>
+{
+    using STORE_CONTAINER_TYPE = std::map<std::string, YAML::Node>;
 };
 
 template <NAMESPACE_TYPE T>
@@ -219,20 +227,28 @@ public:
         }
     }
 
-    std::string getConfigByKey(const std::string &key)
+    auto getConfigByKey(const std::string &key)
     {
         return container_[key];
+    }
+
+    std::vector<std::string> getConfigKeys()
+    {
+        std::vector<std::string> res;
+        for (const auto &item : container_) {
+            res.push_back(item.first);
+        }
+        return res;
     }
 
 private:
     void updateAllConfig()
     {
-        if constexpr ((T2 == STRING_MAP) && (T1 == MULTI_NAMESPACE)) {
-            //multi namespace
+        if constexpr (T1 == MULTI_NAMESPACE) {
             for (const auto &item : config_.namespace_) {
                 updateOneNs(item);
             }
-        } else if constexpr ((T2 == STRING_MAP) && (T1 == SINGLE_NAMESPACE)) {
+        } else if constexpr (T1 == SINGLE_NAMESPACE) {
             updateOneNs(config_.namespace_);
         } else {
             SPDLOG_INFO("UNKNOW TYPE");
@@ -241,47 +257,43 @@ private:
 
     void updateOneNs(const std::string &ns)
     {
-        if constexpr (T2 == STRING_MAP) {
-            if (apollo_client::ends_with(ns, std::string(".yaml"))) {
-                auto node_str = apollo_client::apollo_base::getConfig<apollo_client::YamlPolicy>(config_.address_,
-                                                                                                 config_.appid_,
-                                                                                                 ns,
-                                                                                                 config_.cluster_);
-                if (node_str.has_value()) {
-                    std::lock_guard<std::mutex> locker(container_mutex_);
-                    auto node = YAML::Load(node_str.value());
-                    //也许可以用递归优化
-                    parseYamlNode(node, container_, ns);
-                } else {
-                    SPDLOG_ERROR("{} have not config!", ns);
-                }
-            } else if (apollo_client::ends_with(ns, std::string(".xml"))) {
-                auto xml_str = apollo_client::apollo_base::getConfig<apollo_client::XmlPolicy>(config_.address_,
-                                                                                               config_.appid_,
-                                                                                               ns,
-                                                                                               config_.cluster_);
-                if (xml_str.has_value()) {
-                    std::lock_guard<std::mutex> locker(container_mutex_);
-                    tinyxml2::XMLDocument doc;
-                    doc.Parse(xml_str.value().c_str());
-                    //也许可以用递归优化
-                    SPDLOG_INFO("递归解析xml {}", xml_str.value());
-                    parseXmlNode(doc.RootElement(), container_, ns);
-                } else {
-                    SPDLOG_ERROR("{} have not config!", ns);
-                }
+        if (apollo_client::ends_with(ns, std::string(".yaml"))) {
+            auto node_str = apollo_client::apollo_base::getConfig<apollo_client::YamlPolicy>(config_.address_,
+                                                                                             config_.appid_,
+                                                                                             ns,
+                                                                                             config_.cluster_);
+            if (node_str.has_value()) {
+                std::lock_guard<std::mutex> locker(container_mutex_);
+                auto node = YAML::Load(node_str.value());
+                //也许可以用递归优化
+                parseYamlNode(node, container_, ns);
+
             } else {
+                SPDLOG_ERROR("{} have not config!", ns);
+            }
+        } else if (apollo_client::ends_with(ns, std::string(".xml"))) {
+            auto xml_str = apollo_client::apollo_base::getConfig<apollo_client::XmlPolicy>(config_.address_,
+                                                                                           config_.appid_,
+                                                                                           ns,
+                                                                                           config_.cluster_);
+            if (xml_str.has_value()) {
+                std::lock_guard<std::mutex> locker(container_mutex_);
+                tinyxml2::XMLDocument doc;
+                doc.Parse(xml_str.value().c_str());
+                //也许可以用递归优化
+                SPDLOG_INFO("递归解析xml {}", xml_str.value());
+                parseXmlNode(doc.RootElement(), container_, ns);
+            } else {
+                SPDLOG_ERROR("{} have not config!", ns);
+            }
+        } else {
+            if constexpr (T2 == STRING_MAP) {
                 container_ = apollo_client::apollo_base::getConfigNoBufferInner(config_.appid_,
                                                                                 config_.appid_,
                                                                                 ns,
                                                                                 config_.cluster_);
-            }
-        } else {
-            SPDLOG_INFO("UNIMPLICATION");
-        }
-        if constexpr (T2 == STRING_MAP) {
-            for (const auto &item : container_) {
-                std::cout << item.first << " " << item.second << std::endl;
+            } else {
+                SPDLOG_ERROR("properties must use STRING_MAP");
             }
         }
     }
@@ -419,6 +431,9 @@ private:
 
 using apollo_client_single_ns = apollo_client_base<apollo_client::SINGLE_NAMESPACE, apollo_client::STRING_MAP>;
 using apollo_client_multi_ns = apollo_client_base<apollo_client::MULTI_NAMESPACE, apollo_client::STRING_MAP>;
+
+using apollo_client_single_ns_node = apollo_client_base<apollo_client::SINGLE_NAMESPACE, apollo_client::NODE_MAP>;
+using apollo_client_multi_ns_node = apollo_client_base<apollo_client::MULTI_NAMESPACE, apollo_client::NODE_MAP>;
 
 } // namespace apollo_client
 

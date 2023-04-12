@@ -102,6 +102,50 @@ void parseYamlNode2(const YAML::Node &node, std::map<std::string, std::string> &
 // 仿造python的处理方式对yaml文件进行处理。
 // 从key -> yaml文件
 
+//namespace YAML
+//{
+//template <>
+//struct convert<apollo_client::XmlRpcValue>
+//{
+//    static Node encode(const apollo_client::XmlRpcValue &rhs)
+//    {
+//        Node node;
+//        return node;
+//    }
+//
+//    static bool decode(const Node &node, apollo_client::XmlRpcValue &rhs)
+//    {
+//        if (node.IsMap()) {
+//            return false;
+//        } else if (node.IsScalar()) {
+//            rhs = node.as<std::string>();
+//            return true;
+//        } else if (node.IsSequence()) {
+//
+//        }
+//        return true;
+//    }
+//};
+//} // namespace YAML
+
+void parseYamlNodetest(const YAML::Node &node, std::map<std::string, YAML::Node> &result, const std::string &prefix)
+{
+    if (node.IsScalar() || node.IsSequence() || node.IsNull()) {
+        if (node.IsNull()) {
+            result[prefix] = YAML::Node();
+        } else {
+            result[prefix] = node;
+        }
+    } else if (node.IsMap()) {
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            auto key = it->first.as<std::string>();
+            std::string newPrefix;
+            newPrefix = prefix.empty() ? key : (prefix + "/" + key);
+            parseYamlNodetest(it->second, result, newPrefix);
+        }
+    }
+}
+
 void testYaml()
 {
     YAML::Node node = YAML::LoadFile(YAML_FILE);
