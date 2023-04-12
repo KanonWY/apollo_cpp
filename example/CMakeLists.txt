@@ -14,3 +14,6 @@ target_link_libraries(sample_AppConfig PUBLIC apollo_cpp)
 
 add_executable(sample_xmlrpcvalue sample_xmlrpcvalue.cpp)
 target_link_libraries(sample_xmlrpcvalue PUBLIC apollo_cpp)
+
+add_executable(sample_openapi_base sample_openapi_base.cpp)
+target_link_libraries(sample_openapi_base PUBLIC apollo_cpp)

@@ -35,7 +35,6 @@ void testMultiNs_Node()
     if (res.IsScalar()) {
         SPDLOG_INFO("value = {}", res.as<std::string>());
     }
-
     while (true) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }

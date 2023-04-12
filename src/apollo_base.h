@@ -47,6 +47,13 @@ void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, std::string>
 
 void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, YAML::Node> &result, const std::string &prefix = "");
 
+void modifyGiveNameNodeT(YAML::Node &node,
+                         YAML::Node &parent,
+                         const std::string &name,
+                         const YAML::Node &newNode,
+                         const std::string &prefix = "",
+                         const std::string &curName = "");
+
 inline std::string get_non_buffer_url(const std::string &config_server_url,
                                       const std::string &appid,
                                       const std::string &cluster_name,

@@ -46,6 +46,33 @@ void parseYamlNode(const YAML::Node &node, std::map<std::string, YAML::Node> &re
     }
 }
 
+void modifyGiveNameNodeT(YAML::Node &node,
+                         YAML::Node &parent,
+                         const std::string &name,
+                         const YAML::Node &newNode,
+                         const std::string &prefix,
+                         const std::string &curName)
+{
+    if (node.IsScalar() || node.IsSequence() || node.IsNull()) {
+        if (!strcmp(prefix.c_str(), name.c_str())) {
+            for (auto j = node.begin(); j != node.end(); ++j) {
+                if (!strcmp(j->first.as<std::string>().c_str(), curName.c_str())) {
+                    j->second = newNode;
+                    return;
+                }
+            }
+        }
+    } else if (node.IsMap()) {
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            auto key = it->first.as<std::string>();
+            std::string newPrefix = prefix.empty() ? key : (prefix + "/" + key);
+            modifyGiveNameNodeT(it->second, node, name, newNode, newPrefix, key);
+        }
+    } else {
+        SPDLOG_ERROR("Other type!");
+    }
+}
+
 void parseXmlNode(tinyxml2::XMLElement *element, std::map<std::string, std::string> &result, const std::string &prefix)
 {
     std::string currentKey = prefix.empty() ? element->Name() : prefix + "/" + element->Name();
