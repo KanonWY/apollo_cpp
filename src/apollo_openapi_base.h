@@ -183,7 +183,7 @@ private:
                                                                const std::string &value,
                                                                const std::string &comment = "",
                                                                const std::string &dataChangeLastModifiedBy = "apollo",
-                                                               bool createIfNotExist = false,
+                                                               bool createIfNotExist = true,
                                                                const std::string &createdUserId = "apollo");
 
     /**

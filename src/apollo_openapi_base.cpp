@@ -95,13 +95,13 @@ web::http::http_request apollo_ctrl_base::buildModifyYamlConfigRequest(const YAM
     data[U("key")] = web::json::value::string("content");
     std::stringstream ss;
     ss << node;
-    SPDLOG_INFO("{}", ss.str());
+    //    SPDLOG_INFO("buildModifyYamlConfigRequest {}", ss.str());
     data[U("value")] = web::json::value::string(ss.str());
     data[U("comment")] = web::json::value::string(comment);
     data[U("dataChangeLastModifiedBy")] = web::json::value::string(dataChangeLastModifiedBy);
     if (createIfNotExist) {
         web::http::uri_builder builder;
-        builder.append_query(U("createIfNotExists"), createIfNotExist);
+        builder.append_query(U("createIfNotExists"), true);
         request.set_request_uri(builder.to_string());
         data[U("dataChangeCreatedBy")] = web::json::value::string(createdUserId);
     }
@@ -433,12 +433,17 @@ bool apollo_ctrl_base::deleteConfig(const std::string &appid, const std::string 
 bool apollo_ctrl_base::addNewConfig(const std::string &appid, const std::string &ns, const std::string &key,
                                     const std::string &value, const std::string &comment, const std::string &dataChangeCreatedBy)
 {
+    // check ns exist
+    if ((g_map.count(ns) <= 0) && (g_node_map.count(ns) <= 0)) {
+        SPDLOG_ERROR("namespace not exist: {}", ns);
+        return false;
+    }
     if (apollo_client::ends_with(ns, std::string(".yaml")) || apollo_client::ends_with(ns, std::string(".xml"))) {
         // check exist.
         auto store_map = g_map[ns];
-        std::string realKey = ("/" + appid + "/" + ns + "/" + key);
+        std::string realKey = (appid + "/" + ns + "/" + key);
         if (store_map.count(realKey) > 0) { //exist just Modify.
-            return setConfig(key, value, appid, ns);
+            return setConfig(key, value, ns, appid);
         } else { // new will to add.
             //wrapper value to YAML::Node.
             YAML::Node value_node{value};
@@ -452,7 +457,6 @@ bool apollo_ctrl_base::addNewConfig(const std::string &appid, const std::string 
             }
             // add to store_map
             store_map[realKey] = value_node;
-            publishNamespace(ns, "release");
             return true;
         }
     } else { //properties

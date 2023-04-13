@@ -4,7 +4,24 @@
 static std::string token = "eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5";
 static std::string Address = "http://localhost:8070";
 
-void testGetAllAppNs()
+std::string strNode(YAML::Node &node)
+{
+    std::ostringstream ss;
+    ss << node;
+    return ss.str();
+}
+
+void dumpNode(YAML::Node &node)
+{
+    if (node.IsScalar()) {
+        SPDLOG_INFO("value is{}", node.as<std::string>());
+    } else if (node.IsSequence()) {
+        auto res = node.as<std::vector<double>>();
+        SPDLOG_INFO("{}", strNode(node));
+    }
+}
+
+void TestGetAllAppNs()
 {
     apollo_client::apollo_ctrl_base base;
     apollo_client::MultiNsConfig config;
@@ -20,65 +37,55 @@ void testGetAllAppNs()
     }
 }
 
-void TestGetConfig()
+void TestGetConfig_for_vec_double()
 {
     apollo_client::apollo_ctrl_base base;
     apollo_client::MultiNsConfig config;
     config.SetAppid("openapp").SetAddress(Address);
     base.init(token, config);
-    auto res = base.getConfig("openapp", "testyaml.yaml", "properties/cloud_range/value");
+    std::string key = "properties/cloud_range/value";
+    auto res = base.getConfig("openapp", "testyaml.yaml", key);
     if (res.has_value()) {
-        if (res.value().IsScalar()) {
-            SPDLOG_ERROR("====>>>>>>>>>>>>>>{}", res.value().as<std::string>());
-        } else if (res.value().IsSequence()) {
-            auto r = res.value().as<std::vector<double>>();
-            for (const auto &item : r) {
-                std::cout << "[[[[ i ]]] = " << item << std::endl;
-            }
+        SPDLOG_INFO("key [{}] get success!", key);
+        dumpNode(res.value());
+    } else {
+        SPDLOG_INFO("key [{}] get error!", key);
+    }
+}
+void TestGetConfig_for_vec_string()
+{
+    apollo_client::apollo_ctrl_base base;
+    apollo_client::MultiNsConfig config;
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
+    std::string key = "properties/kenon";
+    auto res = base.getConfig("openapp", "testyaml.yaml", key);
+    if (res.has_value()) {
+        SPDLOG_INFO("key [{}] get success!", key);
+        auto r = res.value().as<std::vector<std::string>>();
+        for (const auto &it : r) {
+            SPDLOG_INFO("{}", it);
         }
+    } else {
+        SPDLOG_INFO("key [{}] get error!", key);
     }
 }
 
-//当前默认key不包含ns前缀
-int getConfig()
+// 对于一个新创建的yaml类型的配置，是无法使用修改接口为其进行修改的，这时候需要调用addConfig的请求。
+void TestAddConfig()
 {
     apollo_client::apollo_ctrl_base base;
     apollo_client::MultiNsConfig config;
     config.SetAppid("openapp").SetAddress(Address);
     base.init(token, config);
-    auto res = base.getConfig("openapp", "testyaml.yaml", "properties/in_lidar_topic/alias");
-    if (res.has_value()) {
-        if (res->IsScalar()) {
-            SPDLOG_ERROR("{}", res.value().as<std::string>());
-        }
-    }
-    return 0;
-}
-//测试设置和传送
-int setConfig()
-{
-    apollo_client::apollo_ctrl_base base;
-    apollo_client::MultiNsConfig config;
-    config.SetAppid("openapp").SetAddress(Address);
-    base.init(token, config);
-    auto res = base.setConfig("alias", "ytesuasdiuausi", "openapp", "testyaml.yaml");
+    std::string key = "jhui";
+    std::string value = "ldplpd";
+    auto res = base.addNewConfig("openapp", "test_yaml2.yaml", key, value);
     if (res) {
-        int a;
-        SPDLOG_INFO("开始publish_1 {} ", a);
-        std::cin >> a;
-        SPDLOG_INFO("开始publish_2 {} ", a);
-        res = base.publishNamespace("testyaml.yaml", "ceshi1");
-        if (res) {
-            SPDLOG_INFO("上传成功!");
-        }
-        auto r = base.getConfig("openapp", "testyaml.yaml", "alias");
-        if (r.has_value()) {
-            SPDLOG_INFO("VALUE = {}", r.value().as<std::string>());
-        } else {
-            SPDLOG_INFO("VALUE NOT EXIST");
-        }
+        SPDLOG_INFO("add config success!");
+    } else {
+        SPDLOG_ERROR("add config error: {}", key);
     }
-    return 0;
 }
 
 void addConfig()
@@ -93,7 +100,7 @@ void addConfig()
         int a;
         SPDLOG_INFO("====> test success");
         std::cin >> a;
-        auto r = base.getConfig("openapp", "testyaml.yaml", "properties/Hello");
+        auto r = base.getConfig("openapp", "testyaml2.yaml", "properties/Hello");
         if (r.has_value()) {
             SPDLOG_INFO("hello have this key!");
             if (r.value().IsScalar()) {
@@ -105,6 +112,6 @@ void addConfig()
 
 int main()
 {
-    testGetAllAppNs();
+    TestAddConfig();
     return 0;
 }
