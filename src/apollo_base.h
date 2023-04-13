@@ -37,22 +37,75 @@ inline bool ends_with(const std::basic_string<charT> &big, const std::basic_stri
     return valid_ and ends_with_;
 }
 
-// 递归解析yaml节点
-
+/**
+ * @brief parse all yaml node to a <string,string> map.
+ * @param node
+ * @param result
+ * @param prefix
+ */
 void parseYamlNode(const YAML::Node &node, std::map<std::string, std::string> &result, const std::string &prefix = "");
 
+/**
+ * @brief parse all yaml node to a <string, YAML::Node> map,
+ *        YAML::Node value is  Scalar or Seq!
+ * @param node
+ * @param result
+ * @param prefix
+ */
 void parseYamlNode(const YAML::Node &node, std::map<std::string, YAML::Node> &result, const std::string &prefix = "");
 
+/**
+ * @brief modify a exist give name key's Node to newNode.
+ *        newNode must be a Seq or Scalar!
+ * @param node
+ * @param parent
+ * @param name
+ * @param newNode
+ * @param prefix
+ * @param curName
+ */
+void modifyGiveNameYamlNode(YAML::Node &node,
+                            YAML::Node &parent,
+                            const std::string &name,
+                            const YAML::Node &newNode,
+                            const std::string &prefix = "",
+                            const std::string &curName = "");
+
+/**
+ * @brief delete a exist give name key's Node.
+ *        name must be Seq or Scalar name.
+ * @param rootNode
+ * @param parent
+ * @param name
+ * @param prefix
+ * @param curName
+ */
+void deleteGiveNameYamlNode(YAML::Node &rootNode,
+                            YAML::Node &parent,
+                            const std::string &name,
+                            const std::string &prefix = "",
+                            const std::string &curName = "");
+
+//TODO:
+void deleteAnyYamlNode(YAML::Node &rootNode);
+
+/**
+ * @brief add new key-value to node.
+ * @param node
+ * @param key
+ * @param newNode
+ */
+void addNameYamlNode(YAML::Node &node, const std::string &key, YAML::Node &newNode);
+
+/**
+ * @brief parse a xmlTree to <string,string> map.
+ * @param node
+ * @param result
+ * @param prefix
+ */
 void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, std::string> &result, const std::string &prefix = "");
 
 void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, YAML::Node> &result, const std::string &prefix = "");
-
-void modifyGiveNameNodeT(YAML::Node &node,
-                         YAML::Node &parent,
-                         const std::string &name,
-                         const YAML::Node &newNode,
-                         const std::string &prefix = "",
-                         const std::string &curName = "");
 
 inline std::string get_non_buffer_url(const std::string &config_server_url,
                                       const std::string &appid,

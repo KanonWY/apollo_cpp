@@ -1,7 +1,3 @@
-add_executable(sample_apollo_base sample_apollo_base.cpp)
-target_link_libraries(sample_apollo_base PUBLIC apollo_cpp)
-
-
 add_executable(sample_apollo_openapi sample_apollo_openapi.cpp)
 target_link_libraries(sample_apollo_openapi PUBLIC apollo_cpp)
 

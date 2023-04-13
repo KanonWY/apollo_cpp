@@ -46,30 +46,56 @@ void parseYamlNode(const YAML::Node &node, std::map<std::string, YAML::Node> &re
     }
 }
 
-void modifyGiveNameNodeT(YAML::Node &node,
-                         YAML::Node &parent,
-                         const std::string &name,
-                         const YAML::Node &newNode,
-                         const std::string &prefix,
-                         const std::string &curName)
+void modifyGiveNameYamlNode(YAML::Node &node, YAML::Node &parent,
+                            const std::string &modifyName, const YAML::Node &newNode,
+                            const std::string &preName, const std::string &curNodeName)
 {
-    if (node.IsScalar() || node.IsSequence() || node.IsNull()) {
-        if (!strcmp(prefix.c_str(), name.c_str())) {
-            for (auto j = node.begin(); j != node.end(); ++j) {
-                if (!strcmp(j->first.as<std::string>().c_str(), curName.c_str())) {
-                    j->second = newNode;
-                    return;
-                }
-            }
+    if (node.IsScalar() || node.IsSequence()) {
+        //notice, first time never enter!
+        if (!strcmp(preName.c_str(), modifyName.c_str())) {
+            parent[curNodeName] = newNode;
+            return;
         }
     } else if (node.IsMap()) {
         for (auto it = node.begin(); it != node.end(); ++it) {
             auto key = it->first.as<std::string>();
-            std::string newPrefix = prefix.empty() ? key : (prefix + "/" + key);
-            modifyGiveNameNodeT(it->second, node, name, newNode, newPrefix, key);
+            std::string newPrefix = preName.empty() ? key : (preName + "/" + key);
+            modifyGiveNameYamlNode(it->second, node, modifyName, newNode, newPrefix, key);
+        }
+    }
+}
+
+void deleteGiveNameYamlNode(YAML::Node &rootNode,
+                            YAML::Node &parent,
+                            const std::string &name,
+                            const std::string &prefix,
+                            const std::string &curName)
+{
+    if (rootNode.IsScalar() || rootNode.IsSequence()) {
+        if (!strcmp(prefix.c_str(), name.c_str())) {
+            parent.remove(curName);
+            return;
+        }
+    } else if (rootNode.IsMap()) {
+        for (auto it = rootNode.begin(); it != rootNode.end(); ++it) {
+            //1.get map key
+            auto key = it->first.as<std::string>();
+            std::string newPrefixName = prefix.empty() ? key : (prefix + "/" + key);
+            deleteGiveNameYamlNode(it->second, rootNode, name, newPrefixName, key);
         }
     } else {
-        SPDLOG_ERROR("Other type!");
+        SPDLOG_ERROR("deleteGiveNameNode error");
+    }
+}
+
+void addNameYamlNode(YAML::Node &node, const std::string &key, YAML::Node &newNode)
+{
+    auto pos = key.find('/');
+    if (pos == std::string::npos) {
+        node[key] = newNode;
+    } else {
+        auto nextNode = node[key.substr(0, pos)];
+        addNameYamlNode(nextNode, key.substr(pos + 1), newNode);
     }
 }
 
@@ -86,12 +112,13 @@ void parseXmlNode(tinyxml2::XMLElement *element, std::map<std::string, std::stri
 
 void parseXmlNode(tinyxml2::XMLElement *node, std::map<std::string, YAML::Node> &result, const std::string &prefix)
 {
+    //TODO: parse XML Node
 }
 
-std::map<std::string, std::string> apollo_base::getConfigNoBufferInner(const std::string &config_server_url,
-                                                                       const std::string &appidName,
-                                                                       const std::string &namespaceName,
-                                                                       const std::string &clusterName)
+std::map<std::string, std::string> apollo_client::apollo_base::getConfigNoBufferInner(const std::string &config_server_url,
+                                                                                      const std::string &appidName,
+                                                                                      const std::string &namespaceName,
+                                                                                      const std::string &clusterName)
 {
     if ((config_server_url.size() + appidName.size() + namespaceName.size() + clusterName.size()) > 200) {
         SPDLOG_ERROR("url large than 200");

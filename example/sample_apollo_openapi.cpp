@@ -1,5 +1,4 @@
 #include "apollo_base.h"
-#include "sample_base.h"
 
 /**
  * @brief This file test basic openapi interface.

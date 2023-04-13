@@ -98,8 +98,30 @@ public:
     std::string buildPublishUrl(const std::string &publishNsName)
     {
         std::ostringstream ss;
-        ss << config_.appid_ << "/openapi/v1/envs/" << config_.env_ << "/apps/" << config_.appid_ << "/clusters/"
+        ss << config_.address_ << "/openapi/v1/envs/" << config_.env_ << "/apps/" << config_.appid_ << "/clusters/"
            << config_.cluster_ << "/namespaces/" << publishNsName << "/releases";
+        SPDLOG_INFO("PublishUrl = {}", ss.str());
+        return ss.str();
+    }
+
+    //URL ： http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items/{key}?operator={operator}
+    //Method ： DELETE
+    std::string buildDeleteUrl(const std::string &namespaceName)
+    {
+        std::ostringstream ss;
+        ss << config_.address_ << "/openapi/v1/envs/" << config_.env_ << "/apps/" << config_.appid_ << "/clusters/"
+           << config_.cluster_ << "/namespaces/" << namespaceName << "/items";
+        SPDLOG_INFO("PublishUrl = {}", ss.str());
+        return ss.str();
+    }
+
+    //URL ： http://{portal_address}/openapi/v1/envs/{env}/apps/{appId}/clusters/{clusterName}/namespaces/{namespaceName}/items
+    //Method ： POST
+    std::string buildAddConfigUrl(const std::string &namespaceName)
+    {
+        std::ostringstream ss;
+        ss << config_.address_ << "/openapi/v1/envs/" << config_.env_ << "/apps/" << config_.appid_ << "/clusters/"
+           << config_.cluster_ << "/namespaces/" << namespaceName << "/items";
         SPDLOG_INFO("PublishUrl = {}", ss.str());
         return ss.str();
     }
@@ -118,7 +140,7 @@ public:
     }
 
     template <typename... Types, REQUEST_TYPE T>
-    web::http::http_request buildRequest(Types &&...args)
+    web::http::http_request buildRequest(Types &&... args)
     {
         return internal_buildRequest(std::forward<Types>(args)..., typename TagDispatchTrait<T>::Tag{});
     }
@@ -189,6 +211,36 @@ public:
         data[U("releaseTitle")] = web::json::value::string(releaseTitle);
         data[U("releasedBy")] = web::json::value::string(releasedBy);
         data[U("releaseComment")] = web::json::value::string(releaseComment);
+        request.headers() = headers;
+        request.set_body(data);
+        return request;
+    }
+
+    web::http::http_request buildDeleteRequest(const std::string &deleteUserId,
+                                               const std::string &key = "content")
+    {
+        web::http::http_request request(web::http::methods::DEL);
+        auto headers = getTokenHeader(token_);
+        web::http::uri_builder builder;
+        builder.append_query(U("key"), key);
+        builder.append_query(U("operator"), deleteUserId);
+        request.set_request_uri(builder.to_string());
+        request.headers() = headers;
+        return request;
+    }
+
+    web::http::http_request buildAddConfigRequest(const std::string &key,
+                                                  const std::string &value,
+                                                  const std::string &comment = "",
+                                                  const std::string &dataChangeCreatedBy = "apollo")
+    {
+        web::http::http_request request(web::http::methods::POST);
+        auto headers = getTokenHeader(token_);
+        web::json::value data;
+        data[U("key")] = web::json::value::string(key);
+        data[U("value")] = web::json::value::string(value);
+        data[U("comment")] = web::json::value::string(comment);
+        data[U("dataChangeCreatedBy")] = web::json::value::string(dataChangeCreatedBy);
         request.headers() = headers;
         request.set_body(data);
         return request;
@@ -277,11 +329,37 @@ public:
 
     bool publishNamespace(const std::string &ns,
                           const std::string &releaseTitle,
-                          const std::string &releasedBy,
-                          const std::string &releaseComment)
+                          const std::string &releasedBy = "apollo",
+                          const std::string &releaseComment = "comment")
     {
         auto res = execHttpRequest(buildPublishUrl(ns), buildPushlishRequest(releaseTitle, releasedBy, releaseComment));
-        SPDLOG_INFO("status {} ", res.status_code());
+        SPDLOG_INFO("publishNamespace status {} ", res.status_code());
+        if (res.status_code() == web::http::status_codes::OK) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool deleteGiveItem(const std::string &ns,
+                        const std::string &deleteUserId,
+                        const std::string &key = "content")
+    {
+        auto res = execHttpRequest(buildDeleteUrl(ns),
+                                   buildDeleteRequest(deleteUserId, key));
+        SPDLOG_INFO("status deleteGiveItem {}", res.status_code());
+        return true;
+    }
+
+    bool addNewItem(const std::string &ns,
+                    const std::string &key,
+                    const std::string &value,
+                    const std::string &comment,
+                    const std::string &dataChangeCreatedBy)
+    {
+        auto response = execHttpRequest(buildAddConfigUrl(ns),
+                                        buildAddConfigRequest(key, value, comment, dataChangeCreatedBy));
+        SPDLOG_INFO("status addNewConfig{}", response.status_code());
         return true;
     }
 
@@ -308,23 +386,32 @@ public:
         }
     }
 
+    /**
+     * @brief  key must exist!
+     * @param key
+     * @param value
+     * @param appid
+     * @param ns
+     * @return
+     */
     bool setConfig(const std::string &key, const std::string &value, const std::string &appid = "", const std::string &ns = "")
     {
         auto store_map = g_map[ns];
         std::string realKey = ('/' + appid + "/" + ns + "/" + key);
         if (store_map.count(realKey) > 0) {
-            //exist just modify
+            //exist -> modify!
             store_map[realKey] = value;
             auto belongNs = getNsNameByKey(realKey);
             auto tailName = getTailNameByKey(realKey);
-
             if (g_node_map.count(ns) > 0) {
                 auto node = g_node_map[belongNs];
-                //递归修改，需要改为循环实现
                 YAML::Node tmpFa;
-                modifyGiveNameNodeT(node, tmpFa, key, store_map[realKey]);
-                //send to ns modify
-                modifyYamlConfig(ns, node);
+                modifyGiveNameYamlNode(node, tmpFa, key, store_map[realKey]);
+                if (!modifyYamlConfig(ns, node)) {
+                    //TODO: recover set node.
+                    return false;
+                }
+                publishNamespace(ns, "release");
                 return true;
             } else {
                 return false;
@@ -332,6 +419,77 @@ public:
         } else {
             return false;
         }
+    }
+
+    bool deleteConfig(const std::string &appid, const std::string &ns, const std::string &key,
+                      const std::string &deleteUsrId = "apollo")
+    {
+        if (apollo_client::ends_with(ns, std::string(".yaml")) || apollo_client::ends_with(ns, std::string(".xml"))) {
+            // get really store map.
+            auto store_map = g_map[ns];
+            std::string realKey = ("/" + appid + "/" + ns + "/" + key);
+            if (store_map.count(realKey) > 0) {
+                //get rootNode which store all YAML::Node in a yaml file!
+                auto rootNode = g_node_map[ns];
+                YAML::Node tmpFa;
+                //remove node(key) from rootNode.
+                deleteGiveNameYamlNode(rootNode, tmpFa, key);
+                //call http modify req.
+                if (!modifyYamlConfig(ns, rootNode)) {
+                    //TODO: recover key-Node!
+                    return false;
+                }
+                //erase node from map.
+                store_map.erase(realKey);
+                return true;
+            } else {
+                //no config, just return.
+                return true;
+            }
+
+        } else { //properties direct call http req is ok!
+            if (ns.find('.') == std::string::npos) {
+                SPDLOG_ERROR("wrong namespace input: {}!", ns);
+            } else {
+                deleteGiveItem(ns, deleteUsrId, key);
+            }
+        }
+        return true;
+    }
+
+    bool addNewConfig(const std::string &appid, const std::string &ns, const std::string &key,
+                      const std::string &value, const std::string &comment = "", const std::string &dataChangeCreatedBy = "apollo")
+    {
+        if (apollo_client::ends_with(ns, std::string(".yaml")) || apollo_client::ends_with(ns, std::string(".xml"))) {
+            // check exist.
+            auto store_map = g_map[ns];
+            std::string realKey = ("/" + appid + "/" + ns + "/" + key);
+            if (store_map.count(realKey) > 0) { //exist just Modify.
+                return setConfig(key, value, appid, ns);
+            } else { // new will to add.
+                //wrapper value to YAML::Node.
+                YAML::Node value_node{value};
+                //add to rootNode.
+                auto rootNode = g_node_map[ns];
+                addNameYamlNode(rootNode, key, value_node);
+                //modify
+                if (!modifyYamlConfig(ns, rootNode, comment)) {
+                    //TODO: recover new add node.
+                    return false;
+                }
+                // add to store_map
+                store_map[realKey] = value_node;
+                publishNamespace(ns, "release");
+                return true;
+            }
+        } else { //properties
+            if (ns.find('.') > ns.size()) {
+                SPDLOG_ERROR("错误的ns!");
+            } else {
+                addNewItem(ns, key, value, comment, dataChangeCreatedBy);
+            }
+        }
+        return true;
     }
 
     static std::string getNsNameByKey(const std::string &key)
