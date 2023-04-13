@@ -1,41 +1,32 @@
 #include <iostream>
 #include "apollo_openapi_base.h"
 
-int main1()
+static std::string token = "eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5";
+static std::string Address = "http://localhost:8070";
+
+void testGetAllAppNs()
 {
     apollo_client::apollo_ctrl_base base;
-    //    eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5
-    //    base.init("eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5");
-
     apollo_client::MultiNsConfig config;
-    config.SetAppid("openapp").SetAddress("http://localhost:8070");
-    base.init("eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5", config);
-    base.getAllAppNs();
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
 
-    for (const auto &it : base.g_map) {
-        for (const auto &i : it.second) {
-            SPDLOG_ERROR("{}", i.first.c_str());
-        }
+    // for (const auto &it : res) {
+    //     std::cout << it << std::endl;
+    // }
+    auto res = base.getAllKey();
+    for (const auto &item : res) {
+        std::cout << item << std::endl;
     }
-    return 0;
 }
 
-int main2()
+void TestGetConfig()
 {
     apollo_client::apollo_ctrl_base base;
-    //    eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5
-    //    base.init("eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5");
-
     apollo_client::MultiNsConfig config;
-    config.SetAppid("openapp").SetAddress("http://localhost:8070");
-    base.init("eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5", config);
-    base.getAllAppNs();
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
     auto res = base.getConfig("openapp", "testyaml.yaml", "properties/cloud_range/value");
-    for (const auto &it : base.g_map) {
-        for (const auto &i : it.second) {
-            SPDLOG_ERROR("{}", i.first.c_str());
-        }
-    }
     if (res.has_value()) {
         if (res.value().IsScalar()) {
             SPDLOG_ERROR("====>>>>>>>>>>>>>>{}", res.value().as<std::string>());
@@ -46,20 +37,15 @@ int main2()
             }
         }
     }
-    return 0;
 }
 
 //当前默认key不包含ns前缀
 int getConfig()
 {
     apollo_client::apollo_ctrl_base base;
-    //    eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5
-    //    base.init("eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5");
-
     apollo_client::MultiNsConfig config;
-    config.SetAppid("openapp").SetAddress("http://localhost:8070");
-    base.init("eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5", config);
-    base.getAllAppNs();
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
     auto res = base.getConfig("openapp", "testyaml.yaml", "properties/in_lidar_topic/alias");
     if (res.has_value()) {
         if (res->IsScalar()) {
@@ -73,9 +59,8 @@ int setConfig()
 {
     apollo_client::apollo_ctrl_base base;
     apollo_client::MultiNsConfig config;
-    config.SetAppid("openapp").SetAddress("http://localhost:8070");
-    base.init("eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5", config);
-    base.getAllAppNs();
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
     auto res = base.setConfig("alias", "ytesuasdiuausi", "openapp", "testyaml.yaml");
     if (res) {
         int a;
@@ -96,15 +81,12 @@ int setConfig()
     return 0;
 }
 
-static std::string token = "eafb8c5d6c45c8c11961ee60a74e8f04775596b08efaf4869807060e8af1eca5";
-
 void addConfig()
 {
     apollo_client::apollo_ctrl_base base;
     apollo_client::MultiNsConfig config;
-    config.SetAppid("openapp").SetAddress("http://localhost:8070");
+    config.SetAppid("openapp").SetAddress(Address);
     base.init(token, config);
-    base.getAllAppNs();
     auto res = base.addNewConfig("openapp", "testyaml.yaml", "properties/kdokaokdo", "------------------->>>>");
     if (res) {
         SPDLOG_INFO("addNewConfig Success!");
@@ -123,6 +105,6 @@ void addConfig()
 
 int main()
 {
-    addConfig();
+    testGetAllAppNs();
     return 0;
 }
