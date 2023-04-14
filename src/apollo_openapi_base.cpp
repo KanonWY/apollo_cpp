@@ -53,7 +53,7 @@ std::string apollo_ctrl_base::buildAddConfigUrl(const std::string &namespaceName
     std::ostringstream ss;
     ss << config_.address_ << "/openapi/v1/envs/" << config_.env_ << "/apps/" << config_.appid_ << "/clusters/"
        << config_.cluster_ << "/namespaces/" << namespaceName << "/items";
-    SPDLOG_INFO("PublishUrl = {}", ss.str());
+    SPDLOG_INFO("buildAddConfigUrl = {}", ss.str());
     return ss.str();
 }
 
@@ -329,7 +329,7 @@ bool apollo_ctrl_base::addNewItem(const std::string &ns,
     auto response = execHttpRequest(buildAddConfigUrl(ns),
                                     buildAddConfigRequest(key, value, comment, dataChangeCreatedBy));
     if (response.status_code() != web::http::status_codes::OK) {
-        SPDLOG_ERROR("add new item error: {}", key);
+        SPDLOG_ERROR("add new item error: {} \n {}", key, response.extract_json().get().serialize().c_str());
         return false;
     }
     return true;
@@ -444,16 +444,27 @@ bool apollo_ctrl_base::addNewConfig(const std::string &appid, const std::string 
         std::string realKey = (appid + "/" + ns + "/" + key);
         if (store_map.count(realKey) > 0) { //exist just Modify.
             return setConfig(key, value, ns, appid);
-        } else { // new will to add.
-            //wrapper value to YAML::Node.
-            YAML::Node value_node{value};
-            //add to rootNode.
+        } else {
+            YAML::Node value_node;
             auto rootNode = g_node_map[ns];
-            addNameYamlNode(rootNode, key, value_node);
-            //modify
-            if (!modifyYamlConfig(ns, rootNode, comment)) {
-                //TODO: recover new add node.
-                return false;
+            if (rootNode.IsNull()) {
+                SPDLOG_INFO("This is an empty config! {}", ns);
+                value_node[key] = value;
+                std::stringstream ss;
+                ss << value_node;
+                if (!addNewItem(ns, "content", ss.str(), comment, dataChangeCreatedBy)) {
+                    return false;
+                }
+                rootNode = value_node;
+            } else {
+                //wrapper value to YAML::Node.
+                value_node = value;
+                //non-empty just modify it!
+                addNameYamlNode(rootNode, key, value_node);
+                if (!modifyYamlConfig(ns, rootNode, comment)) {
+                    //TODO: recover new add node.
+                    return false;
+                }
             }
             // add to store_map
             store_map[realKey] = value_node;
@@ -469,7 +480,7 @@ bool apollo_ctrl_base::addNewConfig(const std::string &appid, const std::string 
     return true;
 }
 
-std::vector<std::string> apollo_ctrl_base::getAllKey()
+std::optional<std::vector<std::string>> apollo_ctrl_base::getAllKey()
 {
     std::vector<std::string> res;
     for (const auto &item : g_map) {
@@ -477,11 +488,33 @@ std::vector<std::string> apollo_ctrl_base::getAllKey()
             res.push_back(it.first);
         }
     }
+    if (res.empty()) {
+        return {};
+    } else {
+        return res;
+    }
+}
+
+std::optional<std::vector<std::string>> apollo_ctrl_base::getNamespaceAllKey(const std::string &namespaceName)
+{
+    std::vector<std::string> res;
+    auto size = g_map.count(namespaceName);
+    if ((g_map.count(namespaceName) <= 0) || (g_map[namespaceName].empty())) {
+        return {};
+    }
+
+    for (const auto &it : g_map[namespaceName]) {
+        res.push_back(it.first);
+    }
     return res;
 }
 
-std::vector<std::string> apollo_ctrl_base::getAllNamespace()
+std::optional<std::vector<std::string>> apollo_ctrl_base::getAllNamespace()
 {
-    return namespaces_;
+    if (namespaces_.empty()) {
+        return {};
+    } else {
+        return namespaces_;
+    }
 }
 }; // namespace apollo_client

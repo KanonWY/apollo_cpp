@@ -32,7 +32,7 @@ void TestGetAllAppNs()
     //     std::cout << it << std::endl;
     // }
     auto res = base.getAllKey();
-    for (const auto &item : res) {
+    for (const auto &item : res.value()) {
         std::cout << item << std::endl;
     }
 }
@@ -88,30 +88,74 @@ void TestAddConfig()
     }
 }
 
-void addConfig()
+void TestPublish()
 {
     apollo_client::apollo_ctrl_base base;
     apollo_client::MultiNsConfig config;
     config.SetAppid("openapp").SetAddress(Address);
     base.init(token, config);
-    auto res = base.addNewConfig("openapp", "testyaml.yaml", "properties/kdokaokdo", "------------------->>>>");
+    std::string ns = "test_yaml2.yaml";
+    std::string pubTitle = "发布";
+    auto res = base.publishNamespace(ns, pubTitle);
     if (res) {
-        SPDLOG_INFO("addNewConfig Success!");
-        int a;
-        SPDLOG_INFO("====> test success");
-        std::cin >> a;
-        auto r = base.getConfig("openapp", "testyaml2.yaml", "properties/Hello");
-        if (r.has_value()) {
-            SPDLOG_INFO("hello have this key!");
-            if (r.value().IsScalar()) {
-                SPDLOG_INFO("value is {}", r.value().as<std::string>());
-            }
+        SPDLOG_INFO("publish {} success ", ns);
+    } else {
+        SPDLOG_INFO("publish {} error ", ns);
+    }
+}
+
+void TestDeleteConfig()
+{
+    apollo_client::apollo_ctrl_base base;
+}
+
+void TestGetNamespaceKey()
+{
+    apollo_client::apollo_ctrl_base base;
+    apollo_client::MultiNsConfig config;
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
+    auto r = base.getNamespaceAllKey("test_yaml2.yaml");
+    if (r.has_value()) {
+        SPDLOG_INFO("exist");
+        for (const auto &item : r.value()) {
+            SPDLOG_INFO("{}", item);
+        }
+    }
+}
+
+void TestGetAllKey()
+{
+    apollo_client::apollo_ctrl_base base;
+    apollo_client::MultiNsConfig config;
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
+    auto r = base.getAllKey();
+    if (r.has_value()) {
+        SPDLOG_INFO("exist");
+        for (const auto &item : r.value()) {
+            SPDLOG_INFO("{}", item);
+        }
+    }
+}
+
+void TestGetAllNamespace()
+{
+    apollo_client::apollo_ctrl_base base;
+    apollo_client::MultiNsConfig config;
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
+    auto r = base.getAllNamespace();
+    if (r.has_value()) {
+        SPDLOG_INFO("存在--->");
+        for (const auto &item : r.value()) {
+            SPDLOG_INFO("{}", item);
         }
     }
 }
 
 int main()
 {
-    TestAddConfig();
+    TestGetAllNamespace();
     return 0;
 }

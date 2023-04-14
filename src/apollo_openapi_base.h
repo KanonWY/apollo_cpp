@@ -372,13 +372,20 @@ public:
      * @brief get all keys in this app
      * @return
      */
-    std::vector<std::string> getAllKey();
+    std::optional<std::vector<std::string>> getAllKey();
+
+    /**
+     * @brief get all keys belongs to a namespace.
+     * @param namespaceName
+     * @return
+     */
+    std::optional<std::vector<std::string>> getNamespaceAllKey(const std::string &namespaceName);
 
     /**
      * @brief get all namespaces in this app
      * @return
      */
-    std::vector<std::string> getAllNamespace();
+    std::optional<std::vector<std::string>> getAllNamespace();
 
 private:
     /**
