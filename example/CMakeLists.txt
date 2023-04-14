@@ -13,3 +13,8 @@ target_link_libraries(sample_xmlrpcvalue PUBLIC apollo_cpp)
 
 add_executable(sample_openapi_base sample_openapi_base.cpp)
 target_link_libraries(sample_openapi_base PUBLIC apollo_cpp)
+
+
+find_package(gflags REQUIRED)
+add_executable(apollo_cli sample_cli_base.cpp)
+target_link_libraries(apollo_cli PUBLIC apollo_cpp gflags)

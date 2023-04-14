@@ -76,7 +76,7 @@ private:
     }
 
     template <typename... Types, REQUEST_TYPE T>
-    web::http::http_request buildRequest(Types &&...args)
+    web::http::http_request buildRequest(Types &&... args)
     {
         return internal_buildRequest(std::forward<Types>(args)..., typename TagDispatchTrait<T>::Tag{});
     }
@@ -387,6 +387,10 @@ public:
      */
     std::optional<std::vector<std::string>> getAllNamespace();
 
+    bool keyExist(const std::string &appid,
+                  const std::string &namespaceName,
+                  const std::string &key);
+
 private:
     /**
      * @brief generate a header by token.
@@ -415,6 +419,12 @@ private:
         size_t pos = key.find_last_of('/');
         std::string tailName = key.substr(pos + 1);
         return tailName;
+    }
+
+    static std::string getRealKey(const std::string &appid,
+                                  const std::string &namespaceName, const std::string &key)
+    {
+        return (appid + "/" + namespaceName + "/" + key);
     }
 
 public:

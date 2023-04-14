@@ -104,11 +104,6 @@ void TestPublish()
     }
 }
 
-void TestDeleteConfig()
-{
-    apollo_client::apollo_ctrl_base base;
-}
-
 void TestGetNamespaceKey()
 {
     apollo_client::apollo_ctrl_base base;
@@ -154,8 +149,23 @@ void TestGetAllNamespace()
     }
 }
 
+void TestDeleteConfig()
+{
+    apollo_client::apollo_ctrl_base base;
+    apollo_client::MultiNsConfig config;
+    config.SetAppid("openapp").SetAddress(Address);
+    base.init(token, config);
+    std::string key = "hello";
+    auto res = base.deleteConfig("openapp", "testyaml.yaml", key);
+    if (res) {
+        SPDLOG_INFO("delete {} success!", key);
+    } else {
+        SPDLOG_INFO("delete {} error!", key);
+    }
+}
+
 int main()
 {
-    TestGetAllNamespace();
+    TestDeleteConfig();
     return 0;
 }

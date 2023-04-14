@@ -397,38 +397,32 @@ bool apollo_ctrl_base::setConfig(const std::string &key,
 bool apollo_ctrl_base::deleteConfig(const std::string &appid, const std::string &ns, const std::string &key,
                                     const std::string &deleteUsrId)
 {
+    if (!keyExist(appid, ns, key)) {
+        return false;
+    }
+    auto store_map = g_map[ns];
+    std::string realKey = getRealKey(appid, ns, key);
     if (apollo_client::ends_with(ns, std::string(".yaml")) || apollo_client::ends_with(ns, std::string(".xml"))) {
-        // get really store map.
-        auto store_map = g_map[ns];
-        std::string realKey = ("/" + appid + "/" + ns + "/" + key);
-        if (store_map.count(realKey) > 0) {
-            //get rootNode which store all YAML::Node in a yaml file!
-            auto rootNode = g_node_map[ns];
-            YAML::Node tmpFa;
-            //remove node(key) from rootNode.
-            deleteGiveNameYamlNode(rootNode, tmpFa, key);
-            //call http modify req.
-            if (!modifyYamlConfig(ns, rootNode)) {
-                //TODO: recover key-Node!
-                return false;
-            }
-            //erase node from map.
-            store_map.erase(realKey);
-            return true;
-        } else {
-            //no config, just return.
-            return true;
+        //get rootNode which store all YAML::Node in a yaml file!
+        auto rootNode = g_node_map[ns];
+        YAML::Node tmpFatherNode;
+        deleteGiveNameYamlNode(rootNode, tmpFatherNode, key);
+        if (!modifyYamlConfig(ns, rootNode)) {
+            return false;
         }
-
     } else { //properties direct call http req is ok!
-        if (ns.find('.') == std::string::npos) {
-            SPDLOG_ERROR("wrong namespace input: {}!", ns);
-        } else {
-            deleteGiveItem(ns, deleteUsrId, key);
+        // TODO check this is a properties
+        if (ns.find('.') != std::string::npos) {
+            SPDLOG_ERROR("no support delete type conifg{}", ns);
+            return false;
+        }
+        if (!deleteGiveItem(ns, deleteUsrId, key)) {
+            return false;
         }
     }
+    store_map.erase(realKey);
     return true;
-}
+} // namespace apollo_client
 
 bool apollo_ctrl_base::addNewConfig(const std::string &appid, const std::string &ns, const std::string &key,
                                     const std::string &value, const std::string &comment, const std::string &dataChangeCreatedBy)
@@ -515,6 +509,23 @@ std::optional<std::vector<std::string>> apollo_ctrl_base::getAllNamespace()
         return {};
     } else {
         return namespaces_;
+    }
+}
+
+bool apollo_ctrl_base::keyExist(const std::string &appid,
+                                const std::string &namespaceName,
+                                const std::string &key)
+{
+    if (g_map.count(namespaceName) <= 0) {
+        SPDLOG_ERROR("namespace {} not exist!", namespaceName);
+        return false;
+    }
+    std::string realKey = (appid + "/" + namespaceName + "/" + key);
+    if (g_map[namespaceName].count(realKey) <= 0) {
+        SPDLOG_ERROR("key {} not exist!", key);
+        return false;
+    } else {
+        return true;
     }
 }
 }; // namespace apollo_client
