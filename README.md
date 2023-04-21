@@ -1,7 +1,8 @@
 ## apollo_cpp
 
 一个简单的apollo参数服务器的客户端，采用C++编写，支持基本的参数查询和参数设置，目前仅支持YAML格式和Properties格式的配置。
-
+新增了一个headeronly的库，用于struct和yamlNode直接转换：  
+[yaml_struct](https://github.com/KanonWY/yaml_struct) 
 ### 依赖
 
 - cpprestsdk
