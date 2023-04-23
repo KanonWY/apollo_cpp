@@ -1,8 +1,9 @@
 ## apollo_cpp
 
-一个简单的apollo参数服务器的客户端，采用C++编写，支持基本的参数查询和参数设置，目前仅支持YAML格式和Properties格式的配置。 
+一个简单的apollo参数服务器的客户端，采用C++编写，支持基本的参数查询和参数设置，目前仅支持YAML格式和Properties格式的配置。
 新增了一个headeronly的库，用于struct和yamlNode直接转换：  
-[yaml_struct](https://github.com/KanonWY/yaml_struct) 
+[yaml_struct](https://github.com/KanonWY/yaml_struct)
+
 ### 依赖
 
 - cpprestsdk
@@ -20,16 +21,18 @@ sudo apt-get install libyaml-cpp-dev
 
 ### 键值设计
 
-参考了ros的参数服务器的设计，Key使用`/`来划分层级，value使用了`YAML::Node`来封装，并且value只能为`Scalar, Sequence`类型（与ros的设计一致）。
+参考了ros的参数服务器的设计，Key使用`/`来划分层级，value使用了`YAML::Node`来封装，并且value只能为`Scalar, Sequence`
+类型（与ros的设计一致）。
 
-例如：testapp下的 test.yaml文件（如下）在客户端存储为：`<string,YAML::Node> =>  appid/namespace/namespace_inner_name  VALUE  `
+例如：testapp下的
+test.yaml文件（如下）在客户端存储为：`<string,YAML::Node> =>  appid/namespace/namespace_inner_name  VALUE  `
 
 ```yaml
 data_coverage_area:
-  right_down: [4.5, 5.4]
-  left_up: [3.5, 5.4]
-  left_down: [2, 3]
-  right_up: [1, 2]
+  right_down: [ 4.5, 5.4 ]
+  left_up: [ 3.5, 5.4 ]
+  left_down: [ 2, 3 ]
+  right_up: [ 1, 2 ]
 data_start_record_time: 2011-11-11-11-11-11
 data_collection_id: test1
 ```
@@ -108,6 +111,8 @@ res = client.setConfig(key, value, namespace, appid);
 apollo_cli支持对某一个某一个appid下的所有命名空间的配置key的查询。
 
 ### param后端
-支持多个后端消息传输  
-- 1、srpc
-- 2、brcp
+
+param服务器与参数客户端使用rpc进行通信， 支持多个rpc通信底层。
+
+- 1、srpc: 搜狗RPC框架
+- 2、brcp: 百度RPC框架（TODO）
