@@ -14,3 +14,7 @@ apollo_client_proxy/src/protoc/protos.tmp
 apollo_client_proxy/src/protoc/protos.tmp/*
 .cache
 .cache/
+
+apollo_param/message.srpc.h
+apollo_param/server.pb_skeleton.cc
+apollo_param/client.pb_skeleton.cc
