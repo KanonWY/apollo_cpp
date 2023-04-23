@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <tinyxml2.h>
 #include <yaml-cpp/yaml.h>
+#include <variant>
 
 #include "apollo_base.h"
 

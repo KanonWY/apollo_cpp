@@ -59,6 +59,15 @@ if (NOT CMAKE_BUILD_TYPE)
             FORCE)
 endif ()
 
+
+# compiler
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported)
+if(ipo_supported)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION True)
+endif()
+
+
 # set gen dir
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/release/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/release/lib")
@@ -67,6 +76,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/release/arc")
 
 # subdirectory
 add_subdirectory(src)
+add_subdirectory(apollo_param)
 # add_subdirectory(apollo_client_proxy)
 if (USE_EXAMPLE)
     add_subdirectory(example)

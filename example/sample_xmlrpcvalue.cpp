@@ -1,4 +1,4 @@
-#include "param.h"
+#include "../include/param.h"
 #include <iostream>
 #include <map>
 #include <string>

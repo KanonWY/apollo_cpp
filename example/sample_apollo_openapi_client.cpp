@@ -2,7 +2,7 @@
 // Created by kanon on 4/3/23.
 //
 
-#include "apollo_openapi_client.h"
+#include "../include/apollo_openapi_client.h"
 
 /**
  * @brief test create new yaml config and pub.

@@ -1,4 +1,4 @@
-#include <apollo_openapi_base.h>
+#include "../include/apollo_openapi_base.h"
 #include <gflags/gflags.h>
 
 DEFINE_string(cmd, "", "which to: gv/gkn/gkall/del/pub");

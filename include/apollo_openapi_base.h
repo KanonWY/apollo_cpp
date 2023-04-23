@@ -53,7 +53,7 @@ struct is_NodeChangeAble : std::integral_constant<bool, std::is_integral_v<T> ||
 };
 
 template <typename T>
-constexpr static bool is_NonChangeAble_v = is_NodeChangeAble<T>::value;
+inline constexpr bool is_NonChangeAble_v = is_NodeChangeAble<T>::value;
 
 /**
  * @brief apollo_ctrl config
@@ -363,60 +363,60 @@ public:
                       const std::string &comment = "",
                       const std::string &dataChangeCreatedBy = "apollo");
 
-    // template <typename T>
-    // std::enable_if_t<(std::is_same_v<std::string, T> || apollo_client::is_NonChangeAble_v<T>), bool>
-    // addNewConfig(const std::string &appid,
-    //              const std::string &ns,
-    //              const std::string &key,
-    //              const T &value,
-    //              const std::string &comment = "",
-    //              const std::string &dataChangeCreatedBy = "apollo")
-    // {
-    //     if ((g_map.count(ns) <= 0) && (g_node_map.count(ns)) <= 0) {
-    //         SPDLOG_ERROR("namespace not exist! : {}", ns);
-    //         return false;
-    //     }
-    //     if (apollo_client::ends_with(ns, std::string(".yaml")) || apollo_client::ends_with(ns, std::string(".xml"))) {
-    //         // check exist.
-    //         auto store_map = g_map[ns];
-    //         std::string realKey = (appid + "/" + ns + "/" + key);
-    //         if (store_map.count(realKey) > 0) { //exist just Modify.
-    //             return setConfig(key, value, ns, appid);
-    //         } else {
-    //             YAML::Node value_node;
-    //             auto rootNode = g_node_map[ns];
-    //             if (rootNode.IsNull()) {
-    //                 SPDLOG_INFO("This is an empty config! {}", ns);
-    //                 value_node[key] = value;
-    //                 std::stringstream ss;
-    //                 ss << value_node;
-    //                 if (!addNewItem(ns, "content", ss.str(), comment, dataChangeCreatedBy)) {
-    //                     return false;
-    //                 }
-    //                 rootNode = value_node;
-    //             } else {
-    //                 //wrapper value to YAML::Node.
-    //                 value_node = value;
-    //                 //non-empty just modify it!
-    //                 addNameYamlNode(rootNode, key, value_node);
-    //                 if (!modifyYamlConfig(ns, rootNode, comment)) {
-    //                     //TODO: recover new add node.
-    //                     return false;
-    //                 }
-    //             }
-    //             // add to store_map
-    //             store_map[realKey] = value_node;
-    //             return true;
-    //         }
-    //     } else { //properties
-    //         if (ns.find('.') > ns.size()) {
-    //             SPDLOG_ERROR("错误的ns!");
-    //         } else {
-    //             addNewItem(ns, key, value, comment, dataChangeCreatedBy);
-    //         }
-    //     }
-    //     return true;
-    // }
+    template <typename T>
+    std::enable_if_t<(std::is_same_v<std::string, T> || apollo_client::is_NonChangeAble_v<T>), bool>
+    addNewConfig(const std::string &appid,
+                 const std::string &ns,
+                 const std::string &key,
+                 const T &value,
+                 const std::string &comment = "",
+                 const std::string &dataChangeCreatedBy = "apollo")
+    {
+        if ((g_map.count(ns) <= 0) && (g_node_map.count(ns)) <= 0) {
+            SPDLOG_ERROR("namespace not exist! : {}", ns);
+            return false;
+        }
+        if (apollo_client::ends_with(ns, std::string(".yaml")) || apollo_client::ends_with(ns, std::string(".xml"))) {
+            // check exist.
+            auto store_map = g_map[ns];
+            std::string realKey = (appid + "/" + ns + "/" + key);
+            if (store_map.count(realKey) > 0) { //exist just Modify.
+                return setConfig(key, value, ns, appid);
+            } else {
+                YAML::Node value_node;
+                auto rootNode = g_node_map[ns];
+                if (rootNode.IsNull()) {
+                    SPDLOG_INFO("This is an empty config! {}", ns);
+                    value_node[key] = value;
+                    std::stringstream ss;
+                    ss << value_node;
+                    if (!addNewItem(ns, "content", ss.str(), comment, dataChangeCreatedBy)) {
+                        return false;
+                    }
+                    rootNode = value_node;
+                } else {
+                    //wrapper value to YAML::Node.
+                    value_node = value;
+                    //non-empty just modify it!
+                    addNameYamlNode(rootNode, key, value_node);
+                    if (!modifyYamlConfig(ns, rootNode, comment)) {
+                        //TODO: recover new add node.
+                        return false;
+                    }
+                }
+                // add to store_map
+                store_map[realKey] = value_node;
+                return true;
+            }
+        } else { //properties
+            if (ns.find('.') > ns.size()) {
+                SPDLOG_ERROR("错误的ns!");
+            } else {
+                addNewItem(ns, key, value, comment, dataChangeCreatedBy);
+            }
+        }
+        return true;
+    }
 
     /**
      * @brief publish a namespace.
