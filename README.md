@@ -106,3 +106,8 @@ res = client.setConfig(key, value, namespace, appid);
 ### CLI查询工具
 
 apollo_cli支持对某一个某一个appid下的所有命名空间的配置key的查询。
+
+### param后端
+支持多个后端消息传输  
+- 1、srpc
+- 2、brcp
