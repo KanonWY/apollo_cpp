@@ -197,7 +197,7 @@ void apollo_ctrl_base::updateAllNamespaceInfoInThisAppid()
     auto response = execHttpRequest(buildGetAllNsUrl(),
                                     buildGetAllNsRequest());
     if (response.status_code() != web::http::status_codes::OK) {
-        SPDLOG_ERROR("updateAllNamespace Error");
+        SPDLOG_ERROR("updateAllNamespace Error {}", response.status_code());
     } else {
         auto jsondata_from_server = response.extract_json().get();
         dealWithJsonData(jsondata_from_server);
@@ -254,7 +254,7 @@ void apollo_ctrl_base::dealWithJsonData(const web::json::value &value)
     for (int i = 0; i < node.size(); ++i) {
         // change node to NsStore
         auto ns_store = node[i].as<NsStore>();
-        namespaces_.push_back(ns_store.namespaceName.c_str());
+        namespaces_.emplace_back(ns_store.namespaceName.c_str());
         // this namespace file is properties
         if (!strcmp(ns_store.format.c_str(), "properties")) {
             // YAML::Node properties_node;

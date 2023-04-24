@@ -51,3 +51,7 @@ target_link_libraries(server_test apollo_param)
 
 add_executable(client_test test/client_test.cc)
 target_link_libraries(client_test apollo_param)
+
+
+add_executable(openapi_server_test test/openapi_server_test.cc)
+target_link_libraries(openapi_server_test apollo_param)

@@ -4,6 +4,7 @@
 #include <string>
 #include "../include/apollo_base_client.h"
 #include "../include/apollo_openapi_client.h"
+#include "../include/apollo_openapi_base.h"
 
 namespace apollo_param
 {
@@ -36,7 +37,7 @@ struct client_var<Q_CLIENT_MUL_NS_NODE>
 template <>
 struct client_var<CLIENT_OPEN_API>
 {
-    using type = apollo_client::apollo_openapi_client_single;
+    using type = apollo_client::apollo_ctrl_base;
 };
 
 #define SET_METHOD_CHAIN(var)                                         \
@@ -90,8 +91,13 @@ struct param_server_config
     bool isValid() const;
 };
 
-template <typename BACK_SERVER>
+template <typename BACK_SERVER, SERVER_TYPE S_TYPE>
 class Base_Server
+{
+};
+
+template <typename BACK_SERVER>
+class Base_Server<BACK_SERVER, Q_CLIENT_MUL_NS>
 {
 public:
     bool init(const param_server_config &config)
@@ -122,8 +128,57 @@ private:
     short port_{};
 
 protected:
-    apollo_client::apollo_client_multi_ns client_var_;
+    client_var<Q_CLIENT_MUL_NS>::type client_var_;
 };
+
+template <typename BACK_SERVER>
+class Base_Server<BACK_SERVER, CLIENT_OPEN_API>
+{
+public:
+    bool init(const param_server_config &config)
+    {
+        config.fillClientConfig(client_config_);
+        server_ip_ = config.server_ip_;
+        port_ = config.port;
+        client_var_.init(client_config_.secret_, client_config_);
+        return static_cast<BACK_SERVER *>(this)->initImp(port_, config.server_ip_);
+    }
+
+    virtual ~Base_Server() = default;
+
+    std::optional<std::string> getStringConfig(const std::string &appid, const std::string &ns, const std::string &key)
+    {
+        auto value = client_var_.getConfig(appid, ns, key);
+        if (value.has_value()) {
+            std::stringstream ss;
+            ss << value.value();
+            return ss.str();
+        } else {
+            return {};
+        }
+    }
+
+    std::optional<std::vector<std::string>> getAllKeys()
+    {
+        return client_var_.getAllKey();
+    }
+
+private:
+    // apollo客户端服务类型
+    apollo_client::MultiNsConfig client_config_;
+    std::string server_ip_{};
+    short port_{};
+
+protected:
+    client_var<CLIENT_OPEN_API>::type client_var_;
+};
+
+template <typename BACK_SERVER>
+using Base_Server_1 = Base_Server<BACK_SERVER, Q_CLIENT_MUL_NS>;
+
+template <typename BACK_SERVER>
+using Base_Server_2 = Base_Server<BACK_SERVER, CLIENT_OPEN_API>;
+
 } // namespace apollo_param
 
 #endif //APOLLO_CPP_CLIENT_APOLLO_PARAM_BASE_H

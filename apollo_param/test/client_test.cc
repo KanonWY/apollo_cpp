@@ -13,7 +13,7 @@ int main()
     req.set_appid(appid);
     req.set_namespace_("testyaml.yaml");
     req.set_op(::apollo_param::OPERATOR::GET);
-    req.set_key("testyaml.yaml/properties/use_multi_thread/mode");
+    req.set_key("properties/record_online_frame_num/value");
 
     apollo_param::Example::SRPCClient client("127.0.0.1", 8822);
     client.Echo(&req, [](apollo_param::EchoResponse *resq, srpc::RPCContext *ctx) {

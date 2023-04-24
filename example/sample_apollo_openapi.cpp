@@ -13,7 +13,7 @@ void test_create_modify_delete()
 {
     apollo_client::apollo_openapi_base openapi_client;
     // 1. GET TOKEN
-    openapi_client.init(test_token);
+    openapi_client.init(test_token, nullptr);
     // 2. create new yaml type ns
     openapi_client.createNewNamespace("localhost:8070",
                                       "openapp",
@@ -67,7 +67,7 @@ void test_create_modify_delete()
 void test_modify_by_openapi()
 {
     apollo_client::apollo_openapi_base openapi_client;
-    openapi_client.init(test_token);
+    openapi_client.init(test_token, nullptr);
     // 1. create a new ns for test modify
     openapi_client.createNewNamespace("localhost:8070",
                                       "openapp",
